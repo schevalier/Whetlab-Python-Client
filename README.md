@@ -3,7 +3,7 @@ Python Client
 
 Here's an example of optimizing the Braninhoo function using spearmint:
 
-    import spearmint_client
+    import whetlab
     import numpy as np
     
     # Define parameters to optimize
@@ -32,7 +32,7 @@ Here's an example of optimizing the Braninhoo function using spearmint:
 
 Here's an example of using spearmint to optimize Sciki-learn's RBF kernel SVM:
 
-    import spearmint_client
+    import whetlab
     
     # Define parameters to optimize
     parameters = { 'C':{'type':'float', 'min':1, 'max':1000, 'size':1},
