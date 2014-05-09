@@ -75,7 +75,7 @@ Its two most important hyper-parameters to tune are the regularization constant 
 and the lengthscale of the RBF kernel ``gamma``.
 
 To inform Whetlab that we will be tuning with respect to these hyper-parameters,
-we'll write down this information into a dictionary, as follows: ::
+we'll write down this information into a dictionary, as follows:
 
     parameters = { 'C':{'type':'float', 'min':1.0, 'max':1000.0, 'size':1},
                    'gamma':{'type':'float', 'min':0.0, 'max':1.0, 'size':1}}
@@ -91,7 +91,7 @@ hyper-parameter. Finally, ``'size'`` specifies whether the hyper-parameter is a 
 (size of 1) or a vector (size greater than 1).
 
 We also need to tell Whetlab what we will be optimizing. In this case, we want
-to minimize the validation set classification error, which we specify as follows: ::
+to minimize the validation set classification error, which we specify as follows:
 
     outcome = {'name':'Classification error', 'type':'float'}
 
@@ -105,13 +105,13 @@ to minimize: ::
 
     scientist = spearmint_client.Experiment(parameters, outcome)
 
-We can now use ``scientist`` to suggest a first job to run: ::
+We can now use ``scientist`` to suggest a first job to run:
 
     job = scientist.suggest()
 
 Here, ``job`` is a dictionary, whose keys are the names of the hyper-parameters
 and the associated values are suggested values to test. We can now instantiate
-a scikit-learn SVM object and train it on our training set: ::
+a scikit-learn SVM object and train it on our training set:
 
     from sklearn import svm
     learner = svm.SVC(kernel='rbf',**job)
