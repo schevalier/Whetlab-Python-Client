@@ -146,7 +146,7 @@ the best hyper-parameters found so far:
 
     best_job = scientist.best()
 
-This is the hyper-parameter values you should be using to train your
+These are the hyper-parameter values you should be using to train your
 final SVM classifier<sup>3</sup>.
 
 <sup>1</sup>This data set is actually quite small for building a good classifier, it'll do for our purposes.
