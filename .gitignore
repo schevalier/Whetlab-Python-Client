@@ -20,3 +20,4 @@ pip-log.txt
 nosetests.xml
 *~
 #*#
+.DS_Store
