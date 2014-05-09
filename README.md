@@ -1,35 +1,6 @@
 Python Client
 =============
 
-Here's an example of optimizing the Braninhoo function using spearmint:
-
-    import whetlab
-    import numpy as np
-    
-    # Define parameters to optimize
-    parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
-                   'Y' : {'type':'float','min':-5,'max':10,'size':1}}
-    
-    outcome = {'name':'Braninhoo output', 'type':'float'}
-    scientist = spearmint_client.Experiment(parameters, outcome)
-    
-    # Braninhoo function
-    def braninhoo(X,Y):
-        return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10;
-    
-    for i in range(20):
-        # Get suggested new experiment
-        job = scientist.suggest()
-    
-        # Perform experiment
-        outcome = braninhoo(**job)
-    
-        # Inform scientist about the outcome
-        scientist.update(job,outcome)
-        scientist.report()
-
-
-
 Here's an example of using spearmint to optimize Sciki-learn's RBF kernel SVM:
 
     import whetlab
@@ -58,5 +29,32 @@ Here's an example of using spearmint to optimize Sciki-learn's RBF kernel SVM:
     
         # Inform scientist about the outcome
         scientist.update(job,error)
+        scientist.report()
+
+Here's an example of optimizing the Braninhoo function using spearmint:
+
+    import whetlab
+    import numpy as np
+    
+    # Define parameters to optimize
+    parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
+                   'Y' : {'type':'float','min':-5,'max':10,'size':1}}
+    
+    outcome = {'name':'Braninhoo output', 'type':'float'}
+    scientist = spearmint_client.Experiment(parameters, outcome)
+    
+    # Braninhoo function
+    def braninhoo(X,Y):
+        return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10;
+    
+    for i in range(20):
+        # Get suggested new experiment
+        job = scientist.suggest()
+    
+        # Perform experiment
+        outcome = braninhoo(**job)
+    
+        # Inform scientist about the outcome
+        scientist.update(job,outcome)
         scientist.report()
 
