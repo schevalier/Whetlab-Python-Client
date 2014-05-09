@@ -91,17 +91,17 @@ hyper-parameter. Finally, ``'size'`` specifies whether the hyper-parameter is a 
 (size of 1) or a vector (size greater than 1).
 
 We also need to tell Whetlab what we will be optimizing. In this case, we want
-to minimize the validation set classification error, which we specify as follows:
+to maximize the validation set classification accuracy, which we specify as follows:
 
-    outcome = {'name':'Classification error', 'type':'float'}
+    outcome = {'name':'Classification accuracy', 'type':'float'}
 
-Note that Whetlab always minimizes, so if one was interested to optimize a measure
-of performance which increases with the quality of the solution, then you would
+Note that Whetlab always maximizes, so if one was interested to optimize a measure
+of performance which decreases with the quality of the solution, such as a cost or error, then you would
 provide the negative of these measured outcomes.
 
 We are now ready to start experimenting. First, we create a Whetlab experiment,
 using the information about the hyper-parameters to tune and the type of outcome
-to minimize: ::
+to maximize: 
 
     scientist = whetlab.Experiment(parameters, outcome)
 
@@ -126,8 +126,8 @@ Once the SVM is trained, we can evaluate its performance on
 the validation set and inform Whetlab of the outcome, using
 the method ``update`` of ``scientist``:
 
-    error = 1-learner.score(*valid_set)
-    scientist.update(job,error)
+    acc = learner.score(*valid_set)
+    scientist.update(job, acc)
 
 Thanks to this information, Whetlab will be able to suggest
 another promising job to run. Hence, with a simple ``for`` loop,
@@ -138,8 +138,8 @@ the process of tuning the SVM becomes:
         job = scientist.suggest()
         learner = svm.SVC(kernel='rbf',**job)
         learner.fit(*train_set)
-        error = 1-learner.score(*valid_set)
-        scientist.update(job,error)
+        acc = learner.score(*valid_set)
+        scientist.update(job, acc)
 
 Once you're done tuning, we can simply ask ``scientist`` to provide you with
 the best hyper-parameters found so far:
