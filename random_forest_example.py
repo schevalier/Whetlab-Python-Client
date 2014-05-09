@@ -10,7 +10,7 @@ parameters = { 'n_estimators':{'type':'integer', 'min':2, 'max':100, 'size':1},
 outcome = {'name':'Classification accuracy', 'type':'float'}
 name = 'Random Forest'
 description = 'Training a random forest on the MNIST dataset using the sklearn library'
-access_token = '07e62300-e86d-436c-95fd-da48a0411082'
+access_token = ''
 scientist = whetlab.Experiment(name=name, description=description,
     access_token=access_token, parameters=parameters, outcome=outcome)
 

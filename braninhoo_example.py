@@ -4,7 +4,7 @@ import numpy as np
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1}}
-access_token = 'LHf5OkiqJjz89bZeEEmepfg1tZVT6W'
+access_token = ''
 name = 'Braninhoo'
 description = 'Optimize the braninhoo optimization benchmark'
 outcome = {'name':'Negative Braninhoo output', 'type':'float'}
