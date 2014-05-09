@@ -199,7 +199,7 @@ Here's an example of optimizing the Braninhoo function using spearmint:
                    'Y' : {'type':'float','min':-5,'max':10,'size':1}}
     
     outcome = {'name':'Braninhoo output', 'type':'float'}
-    scientist = spearmint_client.Experiment(parameters, outcome)
+    scientist = whetlab.Experiment(parameters, outcome)
     
     # Braninhoo function
     def braninhoo(X,Y):
