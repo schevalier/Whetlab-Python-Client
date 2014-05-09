@@ -1,11 +1,5 @@
-Spearmint-Clients
-=================
-
-These will be the various clients for running experiments on the user side, talking to the *REST* server.
-
-
 Python Client
--------------
+=============
 
 Here's an example of optimizing the Braninhoo function using spearmint:
 
