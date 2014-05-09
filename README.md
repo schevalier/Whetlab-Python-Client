@@ -156,8 +156,8 @@ final SVM classifier<sup>3</sup>.
 <sup>3</sup>Simple trick to obtain better results: train the SVM classifier on all the data, i.e. the concatenation of the training and validation sets data.
 
 
-Python Client
-=============
+Quick Examples
+==============
 
 Here's an example of using spearmint to optimize Sciki-learn's RBF kernel SVM:
 
