@@ -26,4 +26,4 @@ Installation is really simple.  Simply navigate to the directory containing whet
 
 Getting Started
 ===============
-We have written up a [tutorial]('doc/html/index.html') to get you up and running quickly with whetlab.
+We have written up a [tutorial](./doc/html/index.html) to get you up and running quickly with whetlab.
