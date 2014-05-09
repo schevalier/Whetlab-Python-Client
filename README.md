@@ -47,8 +47,7 @@ automatically classify web pages according to the topic they discuss.
 The first step is then to obtain some training data for this problem.
 Luckily, scikit-learn provides us with simple functions for
 downloading data sets from the [mldata.org](http://mldata.org/)
-repository.  The reposity contains the `Yahoo! Web Directory Topics
-<http://mldata.org/repository/data/viewslug/yahoo-web-directory-topics/>`_,
+repository.  The reposity contains the [Yahoo! Web Directory Topics](http://mldata.org/repository/data/viewslug/yahoo-web-directory-topics/),
 a data set of web pages<sup>1</sup> labeled with their Yahoo! directory topic
 (Arts, Business, etc.).
 
