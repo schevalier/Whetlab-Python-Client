@@ -103,7 +103,7 @@ We are now ready to start experimenting. First, we create a Whetlab experiment,
 using the information about the hyper-parameters to tune and the type of outcome
 to minimize: ::
 
-    scientist = spearmint_client.Experiment(parameters, outcome)
+    scientist = whetlab.Experiment(parameters, outcome)
 
 We can now use ``scientist`` to suggest a first job to run:
 
@@ -167,7 +167,7 @@ Here's an example of using spearmint to optimize Sciki-learn's RBF kernel SVM:
     parameters = { 'C':{'type':'float', 'min':1, 'max':1000, 'size':1},
                    'gamma':{'type':'float', 'min':0, 'max':1, 'size':1}}
     outcome = {'name':'Classification error', 'type':'float'}
-    scientist = spearmint_client.Experiment(parameters, outcome)
+    scientist = whetlab.Experiment(parameters, outcome)
     
     # Setup scikit-learn experiment
     from sklearn import svm
