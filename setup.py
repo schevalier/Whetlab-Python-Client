@@ -10,8 +10,8 @@ setup(
 	name='whetlab',
 	version='',
 	description='whetlab-api API library client for python',
-	author='Jasper Snoek',
-	author_email='jaspersnoek@gmail.com',
+	author='Whetlab LLC',
+	author_email='info@whetlab.com',
 	url='http://www.whetlab.com/',
 	license='Harvard',
 	install_requires=[
