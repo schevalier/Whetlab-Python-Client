@@ -94,16 +94,7 @@ class Experiment:
              description='Default description',
              parameters=None,
              outcome=None,
-             resume = False,
-             experiment_id = None,
-             task_id = None):
-        
-        # Create REST server client
-        options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
-                    'user_agent':'whetlab_python_client',
-                    'api_version':'api', 'base': 'http://api.whetlab.com'})
-        
-        self._client = whetlab_api.Client({},options)
+             resume = False):
 
         # These are for the client to keep track of things without always 
         # querying the REST server ...
@@ -116,6 +107,27 @@ class Experiment:
         # ... The set of result IDs corresponding to suggested jobs that are pending
         self._pending = set([])
 
+        # Create REST server client
+        options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
+                    'user_agent':'whetlab_python_client',
+                    'api_version':'api')
+                    'base': 'http://api.whetlab.com'})
+        
+        self._client = whetlab_api.Client({},options)
+
+        # Make a few obvious asserts
+        if name == '' or type(name) != str:
+            raise ValueError('Name of experiment must be a non-empty string')
+
+        if type(description) != str:
+            raise ValueError('Description of experiment must be a string')
+
+        if type(parameters) != dict or len(parameters) == 0:
+            raise ValueError('Parameters of experiment must be a non-empty dictionary')
+
+        if type(outcome) != dict or len(outcome) == 0:
+            raise ValueError('Outcome of experiment must be a non-empty dictionary')
+
         # For now, we support one task per experiment, and the name and description of the task
         # is the same as the experiment's
         self.experiment = name
@@ -125,8 +137,8 @@ class Experiment:
 
         if resume:
             # Sync all the internals with the REST server
-            self.experiment_id = experiment_id
-            self.task_id = task_id
+            self.experiment_id = None
+            self.task_id = None
             self._sync_with_server()
         else:
             if parameters is None or outcome is None:
@@ -142,6 +154,9 @@ class Experiment:
             task_name = str(datetime.now())
             res = self._client.tasks().create(experiment=experiment_id,name=self.task,description=self.task_description)
             self.task_id = res.body['id']
+
+            if 'name' not in outcome:
+                raise ValueError('Argument outcome should have key \'name\'')
             self.outcome_name = outcome['name']
             
             # Add specification of parameters to task
