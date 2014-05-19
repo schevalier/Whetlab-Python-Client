@@ -105,12 +105,13 @@ class Experiment:
         # ... From a parameter name to the setting IDs
         self._param_names_to_setting_ids = {}
         # ... The set of result IDs corresponding to suggested jobs that are pending
+        #     *in this current instance of the client*
         self._pending = set([])
 
         # Create REST server client
         options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
                     'user_agent':'whetlab_python_client',
-                    'api_version':'api')
+                    'api_version':'api',
                     'base': 'http://api.whetlab.com'})
         
         self._client = whetlab_api.Client({},options)
@@ -498,7 +499,27 @@ class Experiment:
         else:
             print 'Did not find experiment with the provided parameters'
 
+
+    def pending(self):
+        """
+        Return the list of jobs which have been suggested, but for which no 
+        result has been provided yet.
+
+        :return: List of parameter values.
+        :rtype: list
+        """
     
+        # Sync with the REST server     
+        self._sync_with_server()
+        
+        # Find IDs of results with value None and append parameters to returned list
+        ret = [] 
+        for key,val in self._ids_to_outcome_values.iteritems():
+            if val is None:
+                ret.append(self._ids_to_param_values[key])
+        return list(ret)
+
+
     def best(self):
         """
         Return job with best outcome found so far.
@@ -512,19 +533,11 @@ class Experiment:
 
         # Find ID of result with best outcome
         ids = np.array(self._ids_to_outcome_values.keys())
-        outcomes = np.array(self._ids_to_outcome_values.values())
+        outcomes = [self._ids_to_outcome_values[i] for i in ids]
         # Change Nones with infs
         outcomes = np.array(map(lambda x: x if x is not None else np.inf, outcomes))
         result_id = ids[outcomes.argmax()]
-
-        # Get param values that generated this outcome
-        result = self._client.result(str(result_id)).get().body
-        param_values = {}
-        for var in result['variables']:
-            if var['name'] != self.outcome_name:
-                param_values[var['name']] = var['value']
-
-        return param_values
+        return self._ids_to_param_values[result_id]
     
     def report(self):
         """
