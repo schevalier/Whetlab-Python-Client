@@ -140,7 +140,12 @@ class Experiment:
             # Create a task for this experiment
             from datetime import datetime
             task_name = str(datetime.now())
-            res = self._client.tasks().create(experiment=experiment_id,name=self.task,description=self.task_description)
+            try:
+                res = self._client.tasks().create(experiment=experiment_id,name=self.task,description=self.task_description)
+            except:
+                # Need to try to clean up the experiment if task creation failed
+                res = self._client.experiment(experiment_id).delete()
+                raise
             self.task_id = res.body['id']
             self.outcome_name = outcome['name']
             
