@@ -52,7 +52,7 @@
 <span id="library-documentation"></span><h1>Library Documentation<a class="headerlink" href="#module-spearmint_client" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="spearmint_client.Experiment">
-<em class="property">class </em><tt class="descclassname">spearmint_client.</tt><tt class="descname">Experiment</tt><big>(</big><em>access_token</em>, <em>name='Default name'</em>, <em>description='Default description'</em>, <em>parameters=None</em>, <em>outcome=None</em>, <em>resume=False</em>, <em>experiment_id=None</em>, <em>task_id=None</em><big>)</big><a class="reference internal" href="_modules/spearmint_client.html#Experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spearmint_client.Experiment" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">spearmint_client.</tt><tt class="descname">Experiment</tt><big>(</big><em>access_token</em>, <em>name='Default name'</em>, <em>description='Default description'</em>, <em>parameters=None</em>, <em>outcome=None</em>, <em>resume=False</em>, <em>experiment_id=None</em>, <em>task_id=None</em><big>)</big><a class="headerlink" href="#spearmint_client.Experiment" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Whetlab tuning experiment.</p>
 <p>A name and description for the experiment must be specified.
 A Whetlab access token must also be provided.
@@ -85,14 +85,14 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>access_token</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Access token for your Whetlab account.</li>
-<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of the experiment.</li>
-<li><strong>description</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Description of the experiment.</li>
-<li><strong>parameters</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Parameters to be tuned during the experiment.</li>
-<li><strong>outcome</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Description of the outcome to minimize.</li>
-<li><strong>resume</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to resume a previously executed experiment. If True, <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> are ignored.</li>
-<li><strong>experiment_id</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; ID of the experiment to resume. If not specified, will try to match experiment based on the provided name and description.</li>
-<li><strong>task_id</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; ID of the task to resume. If not specified, will try to match task based on the provided name.</li>
+<li><strong>access_token</strong> (<em>str</em>) &#8211; Access token for your Whetlab account.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; Name of the experiment.</li>
+<li><strong>description</strong> (<em>str</em>) &#8211; Description of the experiment.</li>
+<li><strong>parameters</strong> (<em>dict</em>) &#8211; Parameters to be tuned during the experiment.</li>
+<li><strong>outcome</strong> (<em>dict</em>) &#8211; Description of the outcome to minimize.</li>
+<li><strong>resume</strong> (<em>bool</em>) &#8211; Whether to resume a previously executed experiment. If True, <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> are ignored.</li>
+<li><strong>experiment_id</strong> (<em>int</em>) &#8211; ID of the experiment to resume. If not specified, will try to match experiment based on the provided name and description.</li>
+<li><strong>task_id</strong> (<em>int</em>) &#8211; ID of the task to resume. If not specified, will try to match task based on the provided name.</li>
 </ul>
 </td>
 </tr>
@@ -115,7 +115,7 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 </table>
 <dl class="method">
 <dt id="spearmint_client.Experiment.best">
-<tt class="descname">best</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/spearmint_client.html#Experiment.best"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spearmint_client.Experiment.best" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">best</tt><big>(</big><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.best" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return job with best outcome found so far.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -131,13 +131,13 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 
 <dl class="method">
 <dt id="spearmint_client.Experiment.cancel">
-<tt class="descname">cancel</tt><big>(</big><em>param_values</em><big>)</big><a class="reference internal" href="_modules/spearmint_client.html#Experiment.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spearmint_client.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cancel</tt><big>(</big><em>param_values</em><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel a job, by removing it from the jobs recorded so far in the experiment.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>param_values</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Values of the parameters for the job to cancel.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>param_values</strong> (<em>dict</em>) &#8211; Values of the parameters for the job to cancel.</td>
 </tr>
 </tbody>
 </table>
@@ -145,13 +145,13 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 
 <dl class="method">
 <dt id="spearmint_client.Experiment.report">
-<tt class="descname">report</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/spearmint_client.html#Experiment.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spearmint_client.Experiment.report" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">report</tt><big>(</big><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a visual report of the progress made so far in the experiment.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="spearmint_client.Experiment.suggest">
-<tt class="descname">suggest</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/spearmint_client.html#Experiment.suggest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spearmint_client.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">suggest</tt><big>(</big><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Suggest a new job.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -167,14 +167,14 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 
 <dl class="method">
 <dt id="spearmint_client.Experiment.update">
-<tt class="descname">update</tt><big>(</big><em>param_values</em>, <em>outcome_val</em><big>)</big><a class="reference internal" href="_modules/spearmint_client.html#Experiment.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spearmint_client.Experiment.update" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">update</tt><big>(</big><em>param_values</em>, <em>outcome_val</em><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the experiment with the outcome value associated with some parameter values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>param_values</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Values of parameters.</li>
+<li><strong>param_values</strong> (<em>dict</em>) &#8211; Values of parameters.</li>
 <li><strong>outcome_val</strong> (<em>type defined for outcome</em>) &#8211; Value of the outcome.</li>
 </ul>
 </td>

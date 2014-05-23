@@ -94,16 +94,7 @@ class Experiment:
              description='Default description',
              parameters=None,
              outcome=None,
-             resume = False,
-             experiment_id = None,
-             task_id = None):
-        
-        # Create REST server client
-        options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
-                    'user_agent':'whetlab_python_client',
-                    'api_version':'api', 'base': 'http://api.whetlab.com'})
-        
-        self._client = whetlab_api.Client({},options)
+             resume = False):
 
         # These are for the client to keep track of things without always 
         # querying the REST server ...
@@ -114,7 +105,29 @@ class Experiment:
         # ... From a parameter name to the setting IDs
         self._param_names_to_setting_ids = {}
         # ... The set of result IDs corresponding to suggested jobs that are pending
+        #     *in this current instance of the client*
         self._pending = set([])
+
+        # Create REST server client
+        options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
+                    'user_agent':'whetlab_python_client',
+                    'api_version':'api',
+                    'base': 'http://api.whetlab.com'})
+        
+        self._client = whetlab_api.Client({},options)
+
+        # Make a few obvious asserts
+        if name == '' or type(name) != str:
+            raise ValueError('Name of experiment must be a non-empty string')
+
+        if type(description) != str:
+            raise ValueError('Description of experiment must be a string')
+
+        if type(parameters) != dict or len(parameters) == 0:
+            raise ValueError('Parameters of experiment must be a non-empty dictionary')
+
+        if type(outcome) != dict or len(outcome) == 0:
+            raise ValueError('Outcome of experiment must be a non-empty dictionary')
 
         # For now, we support one task per experiment, and the name and description of the task
         # is the same as the experiment's
@@ -125,8 +138,8 @@ class Experiment:
 
         if resume:
             # Sync all the internals with the REST server
-            self.experiment_id = experiment_id
-            self.task_id = task_id
+            self.experiment_id = None
+            self.task_id = None
             self._sync_with_server()
         else:
             if parameters is None or outcome is None:
@@ -147,6 +160,9 @@ class Experiment:
                 res = self._client.experiment(experiment_id).delete()
                 raise
             self.task_id = res.body['id']
+
+            if 'name' not in outcome:
+                raise ValueError('Argument outcome should have key \'name\'')
             self.outcome_name = outcome['name']
             
             # Add specification of parameters to task
@@ -488,7 +504,27 @@ class Experiment:
         else:
             print 'Did not find experiment with the provided parameters'
 
+
+    def pending(self):
+        """
+        Return the list of jobs which have been suggested, but for which no 
+        result has been provided yet.
+
+        :return: List of parameter values.
+        :rtype: list
+        """
     
+        # Sync with the REST server     
+        self._sync_with_server()
+        
+        # Find IDs of results with value None and append parameters to returned list
+        ret = [] 
+        for key,val in self._ids_to_outcome_values.iteritems():
+            if val is None:
+                ret.append(self._ids_to_param_values[key])
+        return list(ret)
+
+
     def best(self):
         """
         Return job with best outcome found so far.
@@ -502,19 +538,11 @@ class Experiment:
 
         # Find ID of result with best outcome
         ids = np.array(self._ids_to_outcome_values.keys())
-        outcomes = np.array(self._ids_to_outcome_values.values())
+        outcomes = [self._ids_to_outcome_values[i] for i in ids]
         # Change Nones with infs
         outcomes = np.array(map(lambda x: x if x is not None else np.inf, outcomes))
         result_id = ids[outcomes.argmax()]
-
-        # Get param values that generated this outcome
-        result = self._client.result(str(result_id)).get().body
-        param_values = {}
-        for var in result['variables']:
-            if var['name'] != self.outcome_name:
-                param_values[var['name']] = var['value']
-
-        return param_values
+        return self._ids_to_param_values[result_id]
     
     def report(self):
         """
