@@ -3,6 +3,7 @@ from .http_client import HttpClient
 # Assign all the api classes
 from .api.result import Result
 from .api.variables import Variables
+from .api.experiment import Experiment
 from .api.settings import Settings
 from .api.users import Users
 from .api.results import Results
@@ -26,6 +27,12 @@ class Client():
 	#
 	def variables(self):
 		return Variables(self.http_client)
+
+	# Manipulate the experiment indexed by id.
+	#
+	# id - Identifier of corresponding experiment
+	def experiment(self, id):
+		return Experiment(id, self.http_client)
 
 	# Returns the settings config for an experiment
 	#
