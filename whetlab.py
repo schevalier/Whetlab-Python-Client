@@ -30,11 +30,24 @@ outcome_legal_values = {'size':set([1]),
             'scale':set(['linear']),
             'type':set(['float'])}
 
+def delete_experiment(access_token, name, description):
+    """
+    Delete the experiment with the given name and description.  
+
+    Important, this cancels the experiment and removes all saved results!
+
+    """
+
+    scientist = Experiment(access_token, name, description, resume=True)
+    scientist._delete()
+
+
+
 class Experiment:
     """
     A Whetlab tuning experiment.
 
-    A name and description for the experiment must be specified.
+    A ``name`` and ``description`` for the experiment must be specified.
     A Whetlab access token must also be provided.
     The parameters to tune in the experiment are specified by
     ``parameters``. It should be a ``dict``, where keys are
@@ -50,16 +63,18 @@ class Experiment:
     * ``'type'``: type of the parameter (default: ``'float'``)
     * ``'size'``: size of parameter (default: ``1``)
 
-    Outcome should also be a ``dict``, describing the outcome. It
+    ``outcome`` should also be a ``dict``, describing the outcome. It
     should have the keys:
 
     * ``'name'``: name (``str``) for the outcome being optimized
     * ``'type'``: type of the parameter (default: ``'float'``)
     * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
 
-    Finally, experiments can be resumed from a previous state.
-    To do so, ``name`` must match a previously created experiment
-    and argument ``resume`` must be set to ``True`` (default is ``False``).
+    If ``name`` and ``description`` match a previously created experiment,
+    that experiment will be resumed (in this case, ``parameters`` and ``outcoume`` are ignored).
+    This behavior can be avoided by setting the argument ``resume``
+    to ``False`` (in which case an error will be raised is an experiment
+    with the same name and description is found).    
 
     :param access_token: Access token for your Whetlab account.
     :type access_token: str
@@ -71,12 +86,8 @@ class Experiment:
     :type parameters: dict
     :param outcome: Description of the outcome to maximize.
     :type outcome: dict
-    :param resume: Whether to resume a previously executed experiment. If True, ``parameters`` and ``outcome`` are ignored.
+    :param resume: Whether to allow the resuming of a previously executed experiment.
     :type resume: bool
-    :param experiment_id: ID of the experiment to resume. If not specified, will try to match experiment based on the provided name and description.
-    :type experiment_id: int
-    :param task_id: ID of the task to resume. If not specified, will try to match task based on the provided name.
-    :type task_id: int
 
     A Whetlab experiment instance will have the following variables:
 
@@ -91,12 +102,12 @@ class Experiment:
     """
 
     def __init__(self,
-             access_token,
-             name='Default name',
-             description='Default description',
-             parameters=None,
-             outcome=None,
-             resume = False):
+                 access_token,
+                 name='Default name',
+                 description='Default description',
+                 parameters=None,
+                 outcome=None,
+                 resume = True):
 
         # These are for the client to keep track of things without always 
         # querying the REST server ...
@@ -106,9 +117,6 @@ class Experiment:
         self._ids_to_outcome_values = {}
         # ... From a parameter name to the setting IDs
         self._param_names_to_setting_ids = {}
-        # ... The set of result IDs corresponding to suggested jobs that are pending
-        #     *in this current instance of the client*
-        self._pending = set([])
 
         # Create REST server client
         options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
@@ -125,12 +133,6 @@ class Experiment:
         if type(description) != str:
             raise ValueError('Description of experiment must be a string')
 
-        if type(parameters) != dict or len(parameters) == 0:
-            raise ValueError('Parameters of experiment must be a non-empty dictionary')
-
-        if type(outcome) != dict or len(outcome) == 0:
-            raise ValueError('Outcome of experiment must be a non-empty dictionary')
-
         # For now, we support one task per experiment, and the name and description of the task
         # is the same as the experiment's
         self.experiment = name
@@ -138,15 +140,21 @@ class Experiment:
         self.task = name
         self.task_description = description
 
-        if resume:
+        self.experiment_id = self._find_experiment(self.experiment, self.experiment_description)
+        self.task_id = None
+
+        if self.experiment_id is not None and resume:
             # Sync all the internals with the REST server
-            self.experiment_id = None
-            self.task_id = None
             self._sync_with_server()
+
         else:
-            if parameters is None or outcome is None:
-                raise ValueError("Parameters and outcome must be specified")
-            
+
+            if type(parameters) != dict or len(parameters) == 0:
+                raise ValueError('Parameters of experiment must be a non-empty dictionary')
+    
+            if type(outcome) != dict or len(outcome) == 0:
+                raise ValueError('Outcome of experiment must be a non-empty dictionary')
+
             # Create new experiment
             res = self._client.experiments().create(name=self.experiment,description=self.experiment_description,user=4)
             experiment_id = res.body['id']
@@ -228,75 +236,94 @@ class Experiment:
                 raise
 
 
+    def _find_experiment(self, name, description):
+        """
+        Look for experiment matching name and description and return its ID.
+
+        :param name: Experiment's name
+        :type name: str
+        :param description: Experiment's description
+        :type description: str
+        :return: Experiment's ID.
+        :rtype: int
+        """
+
+        # Search one page at a time
+        page = 1
+        more_pages = True
+        while more_pages:
+            rest_exps = self._client.experiments().get({'query':{'page':page}}).body
+        
+            # Check if more pages to come
+            more_pages = rest_exps['next'] is not None
+            page += 1
+        
+            # Find in current page whether we find the experiment we are looking for
+            rest_exps = rest_exps['results']
+            for exp in rest_exps:
+                if cmp(exp['description'],description) == 0 \
+                        and cmp(exp['name'],name) == 0:
+                    return exp['id']
+        return None
+            
+    def _find_task(self, experiment_id, task_name, task_description):
+        """
+        For a given experiment (specified by its ID), look for a task 
+        matching a given name and description, and return its ID.
+
+        :param experiment_id: Experiment's ID
+        :type experiment_id: int
+        :param name: Task's name
+        :type name: str
+        :param description: Task's description
+        :type description: str
+        :return: Task's ID.
+        :rtype: int
+        """
+
+        # Look one page at a time
+        page = 1
+        more_pages = True
+        while more_pages:
+            rest_tasks = self._client.tasks().get({'query':{'page':page}}).body
+        
+            # Check if more pages to come
+            more_pages = rest_tasks['next'] is not None
+            page += 1
+
+            # Find in current page whether we find the task we are looking for
+            rest_tasks = rest_tasks['results']
+            found = False
+            for task in rest_tasks:
+                if cmp(task['experiment'],experiment_id) == 0\
+                        and cmp(task['name'],task_name) == 0\
+                        and cmp(task['description'],task_description) == 0:
+                    return task['id']
+        return None
 
     def _sync_with_server(self):
         """
         Synchronize the client's internals with the REST server.
         """
 
-        # Reset internals
-        self._ids_to_param_values = {}
-        self._ids_to_outcome_values = {}
-        self._param_names_to_setting_ids = {}
-
-        found = False
-
-        if self.experiment_id is None:
-            # Look for experiment and get the ID... search one page at a time
-            page = 1
-            more_pages = True
-            while more_pages:
-                rest_exps = self._client.experiments().get({'query':{'page':page}}).body
-            
-                # Check if more pages to come
-                more_pages = rest_exps['next'] is not None
-                page += 1
-            
-                # Find in current page whether we find the experiment we are looking for
-                rest_exps = rest_exps['results']
-                for exp in rest_exps:
-                    if cmp(exp['description'],self.experiment_description) == 0 \
-                            and cmp(exp['name'],self.experiment) == 0:
-                        self.experiment_id = exp['id']
-                        found = True
-                        break
-                if found:
-                    break
-            if not found:
-                raise ValueError('Experiment with name \''+self.experiment+'\' and description \''+self.experiment_description+'\' not found')
-        else:
-            res = self._client.experiments().get({'query':{'id':self.experiment_id}}).body['results'][0]
-            self.experiment = res['name']
-            self.experiment_description = res['description']
-            
+        res = self._client.experiments().get({'query':{'id':self.experiment_id}}).body['results'][0]
+        self.experiment = res['name']
+        self.experiment_description = res['description']
 
         if self.task_id is None:
-            page = 1
-            more_pages = True
-            while more_pages:
-                rest_tasks = self._client.tasks().get({'query':{'page':page}}).body
-            
-                # Check if more pages to come
-                more_pages = rest_tasks['next'] is not None
-                page += 1
-
-                # Find in current page whether we find the task we are looking for
-                rest_tasks = rest_tasks['results']
-                found = False
-                for task in rest_tasks:
-                    if cmp(task['experiment'],self.experiment_id) == 0\
-                            and cmp(task['name'],self.task) == 0\
-                            and cmp(task['description'],self.task_description) == 0:
-                        self.task_id = task['id']
-                        found = True
-                        break
-            if not found:
+            self.task_id = self._find_task(self.experiment_id, self.task, self.task_description)
+            if self.task_id is None:
                 raise ValueError('Task with name \''+self.task+'\' and description \''+self.task_description+'\' not found')
         else:
             res = self._client.tasks().get({'query':{'id':self.task_id}}).body['results'][0]
             self.task = res['name']
             self.task_description = res['description']
             
+
+        # Reset internals
+        self._ids_to_param_values = {}
+        self._ids_to_outcome_values = {}
+        self._param_names_to_setting_ids = {}
 
         # Get settings for this task, to get the parameter and outcome names
         rest_parameters = self._client.settings().get(str(self.experiment_id),{'query':{'page_size':INF_PAGE_SIZE}}).body
@@ -340,14 +367,6 @@ class Experiment:
                     self._ids_to_param_values[res_id][v['name']] = v['value']
 
 
-    def __del__(self):
-        """
-        Remove the suggested experiments that have not been updated.
-        """
-
-        for id in list(self._pending):
-            self._client.result(str(id)).delete()
-
     def suggest(self):
         """
         Suggest a new job.
@@ -358,8 +377,6 @@ class Experiment:
 
         res = self._client.suggest(str(self.task_id)).go()
         result_id = res.body['id']
-        # Remember that this job is now assumed to be pending
-        self._pending.add(result_id)
 
         # Poll the server for the actual variable values in the suggestion.  
         variables = res.body['variables']
@@ -410,7 +427,8 @@ class Experiment:
         :type outcome_val: type defined for outcome
         """
 
-        outcome_val = float(outcome_val)
+        if outcome_val is not None:
+            outcome_val = float(outcome_val)
 
         # Check if param_values is compatible
         for param,value in param_values.iteritems():
@@ -469,12 +487,8 @@ class Experiment:
                 raise ex
 
             self._ids_to_param_values[result_id] = param_values
-
-        else:
-            # Remove from pending results
-            if result_id in self._pending:
-                self._pending.remove(result_id)
             
+        else:
             # Fill in result with the given outcome value
             result = self._client.result(str(result_id)).get().body
             for var in result['variables']:
@@ -485,16 +499,6 @@ class Experiment:
             res = self._client.result(str(result_id)).update(**result)
             self._ids_to_outcome_values[result_id] = outcome_val
         
-    def delete_experiment(self):
-        """
-        Delete this experiment.  Important, this cancels the experiment and 
-        removes all saved results!
-
-        """
-
-        res = self._client.experiment(str(self.experiment_id)).delete()
-        print 'Experiment has been deleted'
-
     def cancel(self,param_values):
         """
         Cancel a job, by removing it from the jobs recorded so far in the experiment.
@@ -511,14 +515,23 @@ class Experiment:
             del self._ids_to_param_values[id]
             if id in self._ids_to_outcome_values:
                 del self._ids_to_outcome_values[id]
-            if id in self._pending:
-                self._pending.remove(id)
 
             # Delete from server
             self._client.result(str(id)).delete()
         else:
             print 'Did not find experiment with the provided parameters'
 
+
+    def _delete(self):
+        """
+        Delete the experiment with the given name and description.  
+        
+        Important, this cancels the experiment and removes all saved results!
+        
+        """
+
+        res = self._client.experiment(str(self.experiment_id)).delete()
+        print 'Experiment has been deleted'
 
     def pending(self):
         """
@@ -539,6 +552,14 @@ class Experiment:
                 ret.append(self._ids_to_param_values[key])
         return list(ret)
 
+    def clear_pending(self):
+        """
+        Cancel jobs (results) that are marked as pending.
+        """
+
+        p = self.pending()
+        for job in p:
+            self.cancel(job)
 
     def best(self):
         """
