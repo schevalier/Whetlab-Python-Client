@@ -155,71 +155,78 @@ class Experiment:
             # Create a task for this experiment
             from datetime import datetime
             task_name = str(datetime.now())
-            res = self._client.tasks().create(experiment=experiment_id,name=self.task,description=self.task_description)
-            self.task_id = res.body['id']
+            try:
+                res = self._client.tasks().create(experiment=experiment_id,name=self.task,description=self.task_description)
+                self.task_id = res.body['id']
 
-            if 'name' not in outcome:
-                raise ValueError('Argument outcome should have key \'name\'')
-            self.outcome_name = outcome['name']
+                if 'name' not in outcome:
+                    raise ValueError('Argument outcome should have key \'name\'')
+                self.outcome_name = outcome['name']
             
-            # Add specification of parameters to task
-            self.parameters = {}
-            for key in parameters.keys():
+                # Add specification of parameters to task
+                self.parameters = {}
+                for key in parameters.keys():
+                    param = {}
+                    param.update(parameters[key])
+
+                    # Check if all properties are supported
+                    if param['type'] is 'enum':
+                        raise ValueError("Enum types are not supported yet.  Please use integers instead.")
+
+                    for property in param.iterkeys():
+                        if property not in supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
+                    
+                    # Check if required properties are present
+                    for property in required_properties:
+                        if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+
+                    # Add default parameters if not present
+                    for property, default in default_values.iteritems():
+                        if property not in param: param[property] = default
+                    
+                    # Check compatibility of properties
+                    if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+                    for property, legals in legal_values.iteritems():
+                        if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+
+                    self.parameters[key] = param
+                    #res = self._client.setting().set(name=key,type=param['type'],min=param['min'],max=param['max'],size=param['size'],
+                    #                units=param['units'],experiment=experiment_id, scale=param['scale'], isOutput=False)
+                    res = self._client.setting().set(name=key,experiment=experiment_id, isOutput=False, **param)
+                    self._param_names_to_setting_ids[key] = res.body['id']
+
+                # Add the outcome variable
                 param = {}
-                param.update(parameters[key])
+                param.update(outcome)
+
+                # Check outcome doesn't have the same name as any of the parameters
+                if outcome['name'] in self.parameters:
+                    raise ValueError("Outcome name should not match any of the parameter names")
 
                 # Check if all properties are supported
-                if param['type'] is 'enum':
-                    raise ValueError("Enum types are not supported yet.  Please use integers instead.")
-
                 for property in param.iterkeys():
-                    if property not in supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
+                    if property not in outcome_supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
                 
                 # Check if required properties are present
-                for property in required_properties:
+                for property in outcome_required_properties:
                     if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
 
                 # Add default parameters if not present
-                for property, default in default_values.iteritems():
+                for property, default in outcome_default_values.iteritems():
                     if property not in param: param[property] = default
                 
                 # Check compatibility of properties
-                if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
-                for property, legals in legal_values.iteritems():
+                for property, legals in outcome_legal_values.iteritems():
                     if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
 
-                self.parameters[key] = param
-                #res = self._client.setting().set(name=key,type=param['type'],min=param['min'],max=param['max'],size=param['size'],
-                #                units=param['units'],experiment=experiment_id, scale=param['scale'], isOutput=False)
-                res = self._client.setting().set(name=key,experiment=experiment_id, isOutput=False, **param)
-                self._param_names_to_setting_ids[key] = res.body['id']
+                res = self._client.setting().set(experiment=experiment_id, isOutput=True, **param)
+                self._param_names_to_setting_ids[outcome['name']] = res.body['id']
+            except:
+                # Need to try to clean up the experiment if experiment or task creation failed in
+                # order to prevent creating orphaned tasks
+                res = self._client.experiment(str(experiment_id)).delete()
+                raise
 
-            # Add the outcome variable
-            param = {}
-            param.update(outcome)
-
-            # Check outcome doesn't have the same name as any of the parameters
-            if outcome['name'] in self.parameters:
-                raise ValueError("Outcome name should not match any of the parameter names")
-
-            # Check if all properties are supported
-            for property in param.iterkeys():
-                if property not in outcome_supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
-            
-            # Check if required properties are present
-            for property in outcome_required_properties:
-                if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
-
-            # Add default parameters if not present
-            for property, default in outcome_default_values.iteritems():
-                if property not in param: param[property] = default
-            
-            # Check compatibility of properties
-            for property, legals in outcome_legal_values.iteritems():
-                if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
-
-            res = self._client.setting().set(experiment=experiment_id, isOutput=True, **param)
-            self._param_names_to_setting_ids[outcome['name']] = res.body['id']
 
 
     def _sync_with_server(self):
@@ -478,7 +485,16 @@ class Experiment:
             res = self._client.result(str(result_id)).update(**result)
             self._ids_to_outcome_values[result_id] = outcome_val
         
-            
+    def delete_experiment(self):
+        """
+        Delete this experiment.  Important, this cancels the experiment and 
+        removes all saved results!
+
+        """
+
+        res = self._client.experiment(str(self.experiment_id)).delete()
+        print 'Experiment has been deleted'
+
     def cancel(self,param_values):
         """
         Cancel a job, by removing it from the jobs recorded so far in the experiment.

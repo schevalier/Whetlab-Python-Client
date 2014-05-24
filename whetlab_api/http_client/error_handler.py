@@ -26,6 +26,8 @@ class ErrorHandler():
 				else:
 					message = [body[i] for i in body.keys()]
 
+			print message
+			print code
 			if message == '':
 				message = 'Unable to understand the content type of response returned by request responsible for error'
 
