@@ -16,6 +16,8 @@ legal_values = {'size':set([1]),
         'scale':set(['linear','log']),
         'type':set(['float', 'integer'])}
 
+python_types = {'float':float,'integer':int}
+
 outcome_supported_properties = set(['units','type','name'])
 outcome_required_properties = set(['name'])
 outcome_default_values = {'min':-10.,
@@ -404,11 +406,13 @@ class Experiment:
         outcome_val = float(outcome_val)
 
         # Check if param_values is compatible
-        for param,values in param_values.iteritems():
+        for param,value in param_values.iteritems():
             if param not in self.parameters:
                 raise ValueError("Parameter '" +param+ "' not valid")
-            if values < self.parameters[param]['min'] or values > self.parameters[param]['max']:
+            if value < self.parameters[param]['min'] or value > self.parameters[param]['max']:
                 raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
+            if type(value) != python_types[self.parameters[param]['type']]:
+                raise TypeError("Parameter '" +param+ "' should be of type " + self.parameters[param]['type'])
 
         # Check is all parameter values are specified
         for param in self.parameters.keys():
