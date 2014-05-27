@@ -102,7 +102,7 @@ Here, we decided to name our experiment "Web page classifier" and gave
 it a short description reflecting what it is trying to achieve. 
 
 It is important to note that Whetlab will not allow to have multiple 
-experiments with the same name and description. While this is
+experiments with the same name. While this is
 good practice anyways, it is also important for supporting
 the possibility of resuming previously run experiments
 (see section :ref:`resuming_experiments`).
@@ -217,24 +217,28 @@ Resuming experiments
 --------------------
 
 An experiment can also be resumed after it is interrupted,
-based on its name and description.
-By setting the argument ``resume`` to ``True`` when creating the
-experiment, all the information associated with this experiment in our
+based on its name. When creating the experiment, if the name matches
+that of a previously run experiment, the information associated with that experiment in our
 Whetlab account will be fetched into the initial state of our ``scientist``.
 
 In our case, we could resume from the 20 iterations of hyper-parameter
 optimization already performed in the previous section as follows: ::
 
     scientist = whetlab.Experiment(access_token=access_token,
-                                   name="Web page classifier",
-                                   description="Training a polynomial kernel SVM to classify web pages.",
-                                   resume=True)
+                                   name="Web page classifier")
 
-Notice that it is not necessary to specify the ``parameters`` and ``outcome`` arguments in this case.
+Notice that it is not necessary to specify the ``description``,
+``parameters`` and ``outcome`` arguments in this case.  In fact, as
+soon as the name is matched with a previous
+experiment, these arguments are simply ignored.
 
-We see here why it is important to use different names and/or descriptions for the 
-different experiments we decide to perform with Whetlab (this avoids
-ambiguities in resuming past experiments).
+It is thus **very important** to use different names for the 
+different experiments we decide to perform with Whetlab. Otherwise, we
+could be trying to create a new experiment, but accidently be resuming an old one.
+
+As a fail-safe, we can also set the ``resume`` argument to ``False``, to
+guarantee that an old experiment will not be resumed. In the case where
+a matching previous experiment would be found, an exception will be raised.
 
 Adding our own results to an experiment
 ---------------------------------------

@@ -142,7 +142,7 @@ finally create our Whetlab experiment, as follows:</p>
 <p>Here, we decided to name our experiment &#8220;Web page classifier&#8221; and gave
 it a short description reflecting what it is trying to achieve.</p>
 <p>It is important to note that Whetlab will not allow to have multiple
-experiments with the same name and description. While this is
+experiments with the same name. While this is
 good practice anyways, it is also important for supporting
 the possibility of resuming previously run experiments
 (see section <a class="reference internal" href="#resuming-experiments"><em>Resuming experiments</em></a>).</p>
@@ -232,22 +232,25 @@ and manipulated.</p>
 <div class="section" id="resuming-experiments">
 <span id="id3"></span><h2>Resuming experiments<a class="headerlink" href="#resuming-experiments" title="Permalink to this headline">¶</a></h2>
 <p>An experiment can also be resumed after it is interrupted,
-based on its name and description.
-By setting the argument <tt class="docutils literal"><span class="pre">resume</span></tt> to <tt class="docutils literal"><span class="pre">True</span></tt> when creating the
-experiment, all the information associated with this experiment in our
+based on its name. When creating the experiment, if the name matches
+that of a previously run experiment, the information associated with that experiment in our
 Whetlab account will be fetched into the initial state of our <tt class="docutils literal"><span class="pre">scientist</span></tt>.</p>
 <p>In our case, we could resume from the 20 iterations of hyper-parameter
 optimization already performed in the previous section as follows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">scientist</span> <span class="o">=</span> <span class="n">whetlab</span><span class="o">.</span><span class="n">Experiment</span><span class="p">(</span><span class="n">access_token</span><span class="o">=</span><span class="n">access_token</span><span class="p">,</span>
-                               <span class="n">name</span><span class="o">=</span><span class="s">&quot;Web page classifier&quot;</span><span class="p">,</span>
-                               <span class="n">description</span><span class="o">=</span><span class="s">&quot;Training a polynomial kernel SVM to classify web pages.&quot;</span><span class="p">,</span>
-                               <span class="n">resume</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                               <span class="n">name</span><span class="o">=</span><span class="s">&quot;Web page classifier&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Notice that it is not necessary to specify the <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> arguments in this case.</p>
-<p>We see here why it is important to use different names and/or descriptions for the
-different experiments we decide to perform with Whetlab (this avoids
-ambiguities in resuming past experiments).</p>
+<p>Notice that it is not necessary to specify the <tt class="docutils literal"><span class="pre">description</span></tt>,
+<tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> arguments in this case.  In fact, as
+soon as the name is matched with a previous
+experiment, these arguments are simply ignored.</p>
+<p>It is thus <strong>very important</strong> to use different names for the
+different experiments we decide to perform with Whetlab. Otherwise, we
+could be trying to create a new experiment, but accidently be resuming an old one.</p>
+<p>As a fail-safe, we can also set the <tt class="docutils literal"><span class="pre">resume</span></tt> argument to <tt class="docutils literal"><span class="pre">False</span></tt>, to
+guarantee that an old experiment will not be resumed. In the case where
+a matching previous experiment would be found, an exception will be raised.</p>
 </div>
 <div class="section" id="adding-our-own-results-to-an-experiment">
 <h2>Adding our own results to an experiment<a class="headerlink" href="#adding-our-own-results-to-an-experiment" title="Permalink to this headline">¶</a></h2>

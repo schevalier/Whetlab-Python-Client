@@ -1,5 +1,5 @@
 Library Documentation
 =====================
 
-.. automodule:: spearmint_client
+.. automodule:: whetlab
    :members:
