@@ -126,8 +126,7 @@ class Experiment:
         options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
                     'user_agent':'whetlab_python_client',
                     'api_version':'api',
-                    'base': 'http://127.0.0.1:8000/'})
-                    #'base': 'http://api.whetlab.com'})
+                    'base': 'http://api.whetlab.com'})
         
         self._client = whetlab_api.Client({},options)
 
