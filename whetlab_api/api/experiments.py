@@ -6,12 +6,12 @@ class Experiments():
 		self.client = client
 
 	# Return the experiments set corresponding to user
-	# '/alpha/experiments' GET
+	# '/alpha/experiments/' GET
 	#
 	def get(self, options = {}):
 		body = options['query'] if 'query' in options else {}
 
-		response = self.client.get('/alpha/experiments', body, options)
+		response = self.client.get('/alpha/experiments/', body, options)
 
 		return response
 

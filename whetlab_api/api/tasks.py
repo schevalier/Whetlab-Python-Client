@@ -18,14 +18,14 @@ class Tasks():
 	# Creates a new task
 	# '/alpha/tasks/' POST
 	#
-	# experiment - The id of the relevant experiment.
 	# name - A short name for the task. Max 500 chars
 	# description - A detailed description of the task
-	def create(self, experiment, name, description, options = {}):
+	# settings - The parameter specification of the parameters to tbe optimized
+	def create(self, name, description, settings, options = {}):
 		body = options['body'] if 'body' in options else {}
-		body['experiment'] = experiment
 		body['name'] = name
 		body['description'] = description
+		body['settings'] = settings
 
 		response = self.client.post('/alpha/tasks/', body, options)
 
