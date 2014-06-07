@@ -6,7 +6,7 @@ parameters = {'C':{'type':'float', 'min':1.0, 'max':1000.0, 'size':1},
 outcome = {'name':'Classification accuracy', 'type':'float'}
 name = 'sklearn SVM'
 description = 'Training an SVM using the sklearn library'
-access_token = 'f5f453f8-e38e-419f-81a1-14e674b81000' # PUT VALID ACCESS TOKEN HERE
+access_token = '' # PUT VALID ACCESS TOKEN HERE
 scientist = whetlab.Experiment(name=name, description=description,
         access_token=access_token, parameters=parameters, outcome=outcome)
 
