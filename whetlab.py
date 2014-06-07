@@ -458,9 +458,7 @@ class Experiment:
             #   if isinstance(obj, datetime.datetime)
             #   or isinstance(obj, datetime.date)
             #   else None)
-            #date = json.loads(json.dumps(datetime.datetime.now(), default=dthandler))
-            res = self._client.results().add(self.task_id, True, '', '')
-            result_id = res.body['id']
+            #date = json.loads(json.dumps(datetime.datetime.now(), default=dthandler))            
 
             # Create variables for new result
             variables = []
@@ -473,16 +471,9 @@ class Experiment:
                     raise ValueError('Failed to update with non-suggested experiment')
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
-                    
-            res.body['variables'] = variables
-
-            try:
-                res = self._client.result(str(result_id)).update(**res.body)
-            except Exception, ex:
-                # If the update fails for whatever reason (e.g. validation)
-                # we need to make sure we don't leave around empty results
-                self._client.result(str(result_id)).delete()
-                raise ex
+                        
+            res = self._client.results().add(variables, self.task_id, True, '', '')                    
+            result_id = res.body['id']
 
             self._ids_to_param_values[result_id] = param_values
             
