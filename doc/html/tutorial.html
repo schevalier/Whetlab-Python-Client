@@ -142,7 +142,7 @@ finally create our Whetlab experiment, as follows:</p>
 <p>Here, we decided to name our experiment &#8220;Web page classifier&#8221; and gave
 it a short description reflecting what it is trying to achieve.</p>
 <p>It is important to note that Whetlab will not allow to have multiple
-experiments with the same name and description. While this is
+experiments with the same name. While this is
 good practice anyways, it is also important for supporting
 the possibility of resuming previously run experiments
 (see section <a class="reference internal" href="#resuming-experiments"><em>Resuming experiments</em></a>).</p>
@@ -155,8 +155,7 @@ the possibility of resuming previously run experiments
 </div>
 <p>Here, <tt class="docutils literal"><span class="pre">job</span></tt> is a dictionary, whose keys are the names of the hyper-parameters
 and the associated values are suggested values to test:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">job</span>
-<span class="go">{u&#39;C&#39;: 750.0025, u&#39;degree&#39;: 2}</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">u&#39;C&#39;</span><span class="p">:</span> <span class="mf">750.0025</span><span class="p">,</span> <span class="s">u&#39;degree&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>We can now instantiate
@@ -197,6 +196,36 @@ the best hyper-paramters found so far as follows:</p>
 <p>This is the hyper-parameter values we should be using to train our
 final SVM classifier <a class="footnote-reference" href="#f3" id="id2">[2]</a>.</p>
 </div>
+<div class="section" id="getting-multiple-suggestions">
+<span id="multiple-suggestions"></span><h2>Getting multiple suggestions<a class="headerlink" href="#getting-multiple-suggestions" title="Permalink to this headline">¶</a></h2>
+<p>In our running example, jobs were suggested and run sequentially, one
+after another. This is not practical however in a situation where we have access
+to multiple computers, on which jobs could be run in parallel. In this
+case, we&#8217;d rather obtain multiple suggestsions, run each in parallel
+and provide the results to Whetlab as they come in.</p>
+<p>To do this, we can simply call <tt class="docutils literal"><span class="pre">suggest()</span></tt> multiple times in a row:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">job1</span> <span class="o">=</span> <span class="n">scientist</span><span class="o">.</span><span class="n">suggest</span><span class="p">()</span>
+<span class="n">job2</span> <span class="o">=</span> <span class="n">scientist</span><span class="o">.</span><span class="n">suggest</span><span class="p">()</span>
+<span class="n">job3</span> <span class="o">=</span> <span class="n">scientist</span><span class="o">.</span><span class="n">suggest</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The output of <tt class="docutils literal"><span class="pre">suggest()</span></tt> will always a new suggestion and will be
+different from the previous ones:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; print job1, job2, job3
+{u&#39;C&#39;: 750.0025, u&#39;degree&#39;: 2} {u&#39;C&#39;: 250.0075, u&#39;degree&#39;: 4} {u&#39;C&#39;: 375.00625, u&#39;degree&#39;: 2}
+</pre></div>
+</div>
+<p>Jobs that have been suggested but have not been updated with a result
+are called <em>pending jobs</em>. In suggesting new jobs, Whetlab will attempt to suggest
+a job which is both promising and complementary to the currently pending jobs.</p>
+<p>One implication of this mechanism is that <tt class="docutils literal"><span class="pre">suggest()</span></tt> should not be used to
+retrieve the value of a previously suggested (pending) job. To obtain that information,
+use the <tt class="docutils literal"><span class="pre">pending()</span></tt> method instead:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; print scientist.pending()
+[{u&#39;C&#39;: 750.0025, u&#39;degree&#39;: 2}, {u&#39;C&#39;: 250.0075, u&#39;degree&#39;: 4}, {u&#39;C&#39;: 375.00625, u&#39;degree&#39;: 2}]
+</pre></div>
+</div>
+</div>
 <div class="section" id="viewing-experiments">
 <h2>Viewing experiments<a class="headerlink" href="#viewing-experiments" title="Permalink to this headline">¶</a></h2>
 <p>We might want to visualize all the different hyper-parameters
@@ -232,22 +261,25 @@ and manipulated.</p>
 <div class="section" id="resuming-experiments">
 <span id="id3"></span><h2>Resuming experiments<a class="headerlink" href="#resuming-experiments" title="Permalink to this headline">¶</a></h2>
 <p>An experiment can also be resumed after it is interrupted,
-based on its name and description.
-By setting the argument <tt class="docutils literal"><span class="pre">resume</span></tt> to <tt class="docutils literal"><span class="pre">True</span></tt> when creating the
-experiment, all the information associated with this experiment in our
+based on its name. When creating the experiment, if the name matches
+that of a previously run experiment, the information associated with that experiment in our
 Whetlab account will be fetched into the initial state of our <tt class="docutils literal"><span class="pre">scientist</span></tt>.</p>
 <p>In our case, we could resume from the 20 iterations of hyper-parameter
 optimization already performed in the previous section as follows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">scientist</span> <span class="o">=</span> <span class="n">whetlab</span><span class="o">.</span><span class="n">Experiment</span><span class="p">(</span><span class="n">access_token</span><span class="o">=</span><span class="n">access_token</span><span class="p">,</span>
-                               <span class="n">name</span><span class="o">=</span><span class="s">&quot;Web page classifier&quot;</span><span class="p">,</span>
-                               <span class="n">description</span><span class="o">=</span><span class="s">&quot;Training a polynomial kernel SVM to classify web pages.&quot;</span><span class="p">,</span>
-                               <span class="n">resume</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                               <span class="n">name</span><span class="o">=</span><span class="s">&quot;Web page classifier&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Notice that it is not necessary to specify the <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> arguments in this case.</p>
-<p>We see here why it is important to use different names and/or descriptions for the
-different experiments we decide to perform with Whetlab (this avoids
-ambiguities in resuming past experiments).</p>
+<p>Notice that it is not necessary to specify the <tt class="docutils literal"><span class="pre">description</span></tt>,
+<tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> arguments in this case.  In fact, as
+soon as the name is matched with a previous
+experiment, these arguments are simply ignored.</p>
+<p>It is thus <strong>very important</strong> to use different names for the
+different experiments we decide to perform with Whetlab. Otherwise, we
+could be trying to create a new experiment, but accidently be resuming an old one.</p>
+<p>As a fail-safe, we can also set the <tt class="docutils literal"><span class="pre">resume</span></tt> argument to <tt class="docutils literal"><span class="pre">False</span></tt>, to
+guarantee that an old experiment will not be resumed. In the case where
+a matching previous experiment would be found, an exception will be raised.</p>
 </div>
 <div class="section" id="adding-our-own-results-to-an-experiment">
 <h2>Adding our own results to an experiment<a class="headerlink" href="#adding-our-own-results-to-an-experiment" title="Permalink to this headline">¶</a></h2>
@@ -276,8 +308,12 @@ an experiment using the <tt class="docutils literal"><span class="pre">cancel()<
 </div>
 <div class="section" id="deleting-an-experiment">
 <h2>Deleting an experiment<a class="headerlink" href="#deleting-an-experiment" title="Permalink to this headline">¶</a></h2>
-<p>As for deleting a whole experiment, this is accomplished from the Whetlab website,
-by clicking on EDIT:</p>
+<p>As for deleting a whole experiment, this can be accomplished either through Python,
+using function <tt class="docutils literal"><span class="pre">delete_experiment()</span></tt> and providing it with the name of the experiment to delete:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">whetlab</span><span class="o">.</span><span class="n">delete_experiment</span><span class="p">(</span><span class="n">access_token</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;Web page classifier&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or from the Whetlab website, by clicking on EDIT:</p>
 <a class="reference internal image-reference" href="_images/whetlab_edit.png"><img alt="_images/whetlab_edit.png" class="align-center" src="_images/whetlab_edit.png" style="width: 600px;" /></a>
 <p>then scrolling down and clicking on DELETE:</p>
 <a class="reference internal image-reference" href="_images/whetlab_delete.png"><img alt="_images/whetlab_delete.png" class="align-center" src="_images/whetlab_delete.png" style="width: 600px;" /></a>
@@ -314,6 +350,7 @@ no longer show up in our list of experiments.</p>
 <li><a class="reference internal" href="#a-scikit-learn-example">A scikit-learn example</a></li>
 <li><a class="reference internal" href="#setting-up-a-whetlab-experiment">Setting up a Whetlab experiment</a></li>
 <li><a class="reference internal" href="#running-the-experiment">Running the experiment</a></li>
+<li><a class="reference internal" href="#getting-multiple-suggestions">Getting multiple suggestions</a></li>
 <li><a class="reference internal" href="#viewing-experiments">Viewing experiments</a></li>
 <li><a class="reference internal" href="#resuming-experiments">Resuming experiments</a></li>
 <li><a class="reference internal" href="#adding-our-own-results-to-an-experiment">Adding our own results to an experiment</a></li>

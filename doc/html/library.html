@@ -48,13 +48,13 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-spearmint_client">
-<span id="library-documentation"></span><h1>Library Documentation<a class="headerlink" href="#module-spearmint_client" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-whetlab">
+<span id="library-documentation"></span><h1>Library Documentation<a class="headerlink" href="#module-whetlab" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
-<dt id="spearmint_client.Experiment">
-<em class="property">class </em><tt class="descclassname">spearmint_client.</tt><tt class="descname">Experiment</tt><big>(</big><em>access_token</em>, <em>name='Default name'</em>, <em>description='Default description'</em>, <em>parameters=None</em>, <em>outcome=None</em>, <em>resume=False</em>, <em>experiment_id=None</em>, <em>task_id=None</em><big>)</big><a class="headerlink" href="#spearmint_client.Experiment" title="Permalink to this definition">¶</a></dt>
+<dt id="whetlab.Experiment">
+<em class="property">class </em><tt class="descclassname">whetlab.</tt><tt class="descname">Experiment</tt><big>(</big><em>access_token</em>, <em>name='Default name'</em>, <em>description='Default description'</em>, <em>parameters=None</em>, <em>outcome=None</em>, <em>resume=True</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Whetlab tuning experiment.</p>
-<p>A name and description for the experiment must be specified.
+<p>A <tt class="docutils literal"><span class="pre">name</span></tt> and <tt class="docutils literal"><span class="pre">description</span></tt> for the experiment must be specified.
 A Whetlab access token must also be provided.
 The parameters to tune in the experiment are specified by
 <tt class="docutils literal"><span class="pre">parameters</span></tt>. It should be a <tt class="docutils literal"><span class="pre">dict</span></tt>, where keys are
@@ -70,29 +70,29 @@ the parameter:</p>
 <li><tt class="docutils literal"><span class="pre">'type'</span></tt>: type of the parameter (default: <tt class="docutils literal"><span class="pre">'float'</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">'size'</span></tt>: size of parameter (default: <tt class="docutils literal"><span class="pre">1</span></tt>)</li>
 </ul>
-<p>Outcome should also be a <tt class="docutils literal"><span class="pre">dict</span></tt>, describing the outcome. It
+<p><tt class="docutils literal"><span class="pre">outcome</span></tt> should also be a <tt class="docutils literal"><span class="pre">dict</span></tt>, describing the outcome. It
 should have the keys:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">'name'</span></tt>: name (<tt class="docutils literal"><span class="pre">str</span></tt>) for the outcome being optimized</li>
 <li><tt class="docutils literal"><span class="pre">'type'</span></tt>: type of the parameter (default: <tt class="docutils literal"><span class="pre">'float'</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">'units'</span></tt>: units (<tt class="docutils literal"><span class="pre">str</span></tt>) in which the parameter is measured (default: <tt class="docutils literal"><span class="pre">''</span></tt>)</li>
 </ul>
-<p>Finally, experiments can be resumed from a previous state.
-To do so, <tt class="docutils literal"><span class="pre">name</span></tt> must match a previously created experiment
-and argument <tt class="docutils literal"><span class="pre">resume</span></tt> must be set to <tt class="docutils literal"><span class="pre">True</span></tt> (default is <tt class="docutils literal"><span class="pre">False</span></tt>).</p>
+<p>If <tt class="docutils literal"><span class="pre">name</span></tt> and <tt class="docutils literal"><span class="pre">description</span></tt> match a previously created experiment,
+that experiment will be resumed (in this case, <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcoume</span></tt> are ignored).
+This behavior can be avoided by setting the argument <tt class="docutils literal"><span class="pre">resume</span></tt>
+to <tt class="docutils literal"><span class="pre">False</span></tt> (in which case an error will be raised is an experiment
+with the same name and description is found).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>access_token</strong> (<em>str</em>) &#8211; Access token for your Whetlab account.</li>
-<li><strong>name</strong> (<em>str</em>) &#8211; Name of the experiment.</li>
-<li><strong>description</strong> (<em>str</em>) &#8211; Description of the experiment.</li>
-<li><strong>parameters</strong> (<em>dict</em>) &#8211; Parameters to be tuned during the experiment.</li>
-<li><strong>outcome</strong> (<em>dict</em>) &#8211; Description of the outcome to minimize.</li>
-<li><strong>resume</strong> (<em>bool</em>) &#8211; Whether to resume a previously executed experiment. If True, <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcome</span></tt> are ignored.</li>
-<li><strong>experiment_id</strong> (<em>int</em>) &#8211; ID of the experiment to resume. If not specified, will try to match experiment based on the provided name and description.</li>
-<li><strong>task_id</strong> (<em>int</em>) &#8211; ID of the task to resume. If not specified, will try to match task based on the provided name.</li>
+<li><strong>access_token</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Access token for your Whetlab account.</li>
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of the experiment.</li>
+<li><strong>description</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Description of the experiment.</li>
+<li><strong>parameters</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Parameters to be tuned during the experiment.</li>
+<li><strong>outcome</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Description of the outcome to maximize.</li>
+<li><strong>resume</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to allow the resuming of a previously executed experiment.</li>
 </ul>
 </td>
 </tr>
@@ -105,7 +105,7 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
 <li><strong>parameters</strong> &#8211; Parameters to be tuned during the experiment.</li>
-<li><strong>outcome</strong> &#8211; Description of the outcome to minimize.</li>
+<li><strong>outcome</strong> &#8211; Description of the outcome to maximize.</li>
 <li><strong>experiment_id</strong> &#8211; ID of the experiment (useful for resuming).</li>
 <li><strong>task_id</strong> &#8211; ID of the task (useful for resuming).</li>
 </ul>
@@ -114,8 +114,8 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 </tbody>
 </table>
 <dl class="method">
-<dt id="spearmint_client.Experiment.best">
-<tt class="descname">best</tt><big>(</big><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.best" title="Permalink to this definition">¶</a></dt>
+<dt id="whetlab.Experiment.best">
+<tt class="descname">best</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.best"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.best" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return job with best outcome found so far.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -130,28 +130,51 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 </dd></dl>
 
 <dl class="method">
-<dt id="spearmint_client.Experiment.cancel">
-<tt class="descname">cancel</tt><big>(</big><em>param_values</em><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
+<dt id="whetlab.Experiment.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>param_values</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel a job, by removing it from the jobs recorded so far in the experiment.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>param_values</strong> (<em>dict</em>) &#8211; Values of the parameters for the job to cancel.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>param_values</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Values of the parameters for the job to cancel.</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="spearmint_client.Experiment.report">
-<tt class="descname">report</tt><big>(</big><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.report" title="Permalink to this definition">¶</a></dt>
+<dt id="whetlab.Experiment.clear_pending">
+<tt class="descname">clear_pending</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.clear_pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.clear_pending" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel jobs (results) that are marked as pending.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.pending">
+<tt class="descname">pending</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.pending" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of jobs which have been suggested, but for which no 
+result has been provided yet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of parameter values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.report">
+<tt class="descname">report</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a visual report of the progress made so far in the experiment.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="spearmint_client.Experiment.suggest">
-<tt class="descname">suggest</tt><big>(</big><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
+<dt id="whetlab.Experiment.suggest">
+<tt class="descname">suggest</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.suggest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Suggest a new job.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -166,15 +189,15 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 </dd></dl>
 
 <dl class="method">
-<dt id="spearmint_client.Experiment.update">
-<tt class="descname">update</tt><big>(</big><em>param_values</em>, <em>outcome_val</em><big>)</big><a class="headerlink" href="#spearmint_client.Experiment.update" title="Permalink to this definition">¶</a></dt>
+<dt id="whetlab.Experiment.update">
+<tt class="descname">update</tt><big>(</big><em>param_values</em>, <em>outcome_val</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the experiment with the outcome value associated with some parameter values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>param_values</strong> (<em>dict</em>) &#8211; Values of parameters.</li>
+<li><strong>param_values</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Values of parameters.</li>
 <li><strong>outcome_val</strong> (<em>type defined for outcome</em>) &#8211; Value of the outcome.</li>
 </ul>
 </td>
@@ -183,6 +206,25 @@ and argument <tt class="docutils literal"><span class="pre">resume</span></tt> m
 </table>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="whetlab.delete_experiment">
+<tt class="descclassname">whetlab.</tt><tt class="descname">delete_experiment</tt><big>(</big><em>access_token</em>, <em>name</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#delete_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.delete_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the experiment with the given name.</p>
+<p>Important, this cancels the experiment and removes all saved results!</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>access_token</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; User access token</li>
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Experiment name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

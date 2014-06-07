@@ -30,15 +30,19 @@ outcome_legal_values = {'size':set([1]),
             'scale':set(['linear']),
             'type':set(['float'])}
 
-def delete_experiment(access_token, name, description):
+def delete_experiment(access_token, name):
     """
-    Delete the experiment with the given name and description.  
+    Delete the experiment with the given name.  
 
     Important, this cancels the experiment and removes all saved results!
 
+    :param access_token: User access token
+    :type access_token: str
+    :param name: Experiment name
+    :type name: str
     """
 
-    scientist = Experiment(access_token, name, description, resume=True)
+    scientist = Experiment(access_token, name, resume=True)
     scientist._delete()
 
 
@@ -140,7 +144,7 @@ class Experiment:
         self.task = name
         self.task_description = description
 
-        self.experiment_id = self._find_experiment(self.experiment, self.experiment_description)
+        self.experiment_id = self._find_experiment(self.experiment)
         self.task_id = None
 
         if self.experiment_id is not None and resume:
@@ -236,14 +240,12 @@ class Experiment:
                 raise
 
 
-    def _find_experiment(self, name, description):
+    def _find_experiment(self, name):
         """
-        Look for experiment matching name and description and return its ID.
+        Look for experiment matching name and return its ID.
 
         :param name: Experiment's name
         :type name: str
-        :param description: Experiment's description
-        :type description: str
         :return: Experiment's ID.
         :rtype: int
         """
@@ -261,22 +263,19 @@ class Experiment:
             # Find in current page whether we find the experiment we are looking for
             rest_exps = rest_exps['results']
             for exp in rest_exps:
-                if cmp(exp['description'],description) == 0 \
-                        and cmp(exp['name'],name) == 0:
+                if cmp(exp['name'],name) == 0:
                     return exp['id']
         return None
             
-    def _find_task(self, experiment_id, task_name, task_description):
+    def _find_task(self, experiment_id, task_name):
         """
         For a given experiment (specified by its ID), look for a task 
-        matching a given name and description, and return its ID.
+        matching a given name and return its ID.
 
         :param experiment_id: Experiment's ID
         :type experiment_id: int
         :param name: Task's name
         :type name: str
-        :param description: Task's description
-        :type description: str
         :return: Task's ID.
         :rtype: int
         """
@@ -296,8 +295,7 @@ class Experiment:
             found = False
             for task in rest_tasks:
                 if cmp(task['experiment'],experiment_id) == 0\
-                        and cmp(task['name'],task_name) == 0\
-                        and cmp(task['description'],task_description) == 0:
+                        and cmp(task['name'],task_name) == 0:
                     return task['id']
         return None
 
@@ -311,9 +309,9 @@ class Experiment:
         self.experiment_description = res['description']
 
         if self.task_id is None:
-            self.task_id = self._find_task(self.experiment_id, self.task, self.task_description)
+            self.task_id = self._find_task(self.experiment_id, self.task)
             if self.task_id is None:
-                raise ValueError('Task with name \''+self.task+'\' and description \''+self.task_description+'\' not found')
+                raise ValueError('Task with name \''+self.task+'\' not found')
         else:
             res = self._client.tasks().get({'query':{'id':self.task_id}}).body['results'][0]
             self.task = res['name']

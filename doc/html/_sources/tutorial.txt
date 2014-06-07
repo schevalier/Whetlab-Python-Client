@@ -102,7 +102,7 @@ Here, we decided to name our experiment "Web page classifier" and gave
 it a short description reflecting what it is trying to achieve. 
 
 It is important to note that Whetlab will not allow to have multiple 
-experiments with the same name and description. While this is
+experiments with the same name. While this is
 good practice anyways, it is also important for supporting
 the possibility of resuming previously run experiments
 (see section :ref:`resuming_experiments`).
@@ -117,7 +117,6 @@ We are now ready to start experimenting. We can use ``scientist`` to suggest a f
 Here, ``job`` is a dictionary, whose keys are the names of the hyper-parameters
 and the associated values are suggested values to test: ::
 
-    >>> print job
     {u'C': 750.0025, u'degree': 2}
 
 We can now instantiate
@@ -158,6 +157,40 @@ the best hyper-paramters found so far as follows: ::
 
 This is the hyper-parameter values we should be using to train our
 final SVM classifier [#f3]_.
+
+.. _multiple_suggestions:
+
+Getting multiple suggestions
+----------------------------
+
+In our running example, jobs were suggested and run sequentially, one
+after another. This is not practical however in a situation where we have access
+to multiple computers, on which jobs could be run in parallel. In this
+case, we'd rather obtain multiple suggestsions, run each in parallel
+and provide the results to Whetlab as they come in.
+
+To do this, we can simply call ``suggest()`` multiple times in a row: ::
+
+    job1 = scientist.suggest()
+    job2 = scientist.suggest()
+    job3 = scientist.suggest()
+
+The output of ``suggest()`` will always a new suggestion and will be 
+different from the previous ones: ::
+
+    >> print job1, job2, job3
+    {u'C': 750.0025, u'degree': 2} {u'C': 250.0075, u'degree': 4} {u'C': 375.00625, u'degree': 2}
+
+Jobs that have been suggested but have not been updated with a result
+are called *pending jobs*. In suggesting new jobs, Whetlab will attempt to suggest
+a job which is both promising and complementary to the currently pending jobs.
+
+One implication of this mechanism is that ``suggest()`` should not be used to 
+retrieve the value of a previously suggested (pending) job. To obtain that information,
+use the ``pending()`` method instead: ::
+
+    >> print scientist.pending()
+    [{u'C': 750.0025, u'degree': 2}, {u'C': 250.0075, u'degree': 4}, {u'C': 375.00625, u'degree': 2}]    
 
 Viewing experiments
 -------------------
@@ -217,24 +250,28 @@ Resuming experiments
 --------------------
 
 An experiment can also be resumed after it is interrupted,
-based on its name and description.
-By setting the argument ``resume`` to ``True`` when creating the
-experiment, all the information associated with this experiment in our
+based on its name. When creating the experiment, if the name matches
+that of a previously run experiment, the information associated with that experiment in our
 Whetlab account will be fetched into the initial state of our ``scientist``.
 
 In our case, we could resume from the 20 iterations of hyper-parameter
 optimization already performed in the previous section as follows: ::
 
     scientist = whetlab.Experiment(access_token=access_token,
-                                   name="Web page classifier",
-                                   description="Training a polynomial kernel SVM to classify web pages.",
-                                   resume=True)
+                                   name="Web page classifier")
 
-Notice that it is not necessary to specify the ``parameters`` and ``outcome`` arguments in this case.
+Notice that it is not necessary to specify the ``description``,
+``parameters`` and ``outcome`` arguments in this case.  In fact, as
+soon as the name is matched with a previous
+experiment, these arguments are simply ignored.
 
-We see here why it is important to use different names and/or descriptions for the 
-different experiments we decide to perform with Whetlab (this avoids
-ambiguities in resuming past experiments).
+It is thus **very important** to use different names for the 
+different experiments we decide to perform with Whetlab. Otherwise, we
+could be trying to create a new experiment, but accidently be resuming an old one.
+
+As a fail-safe, we can also set the ``resume`` argument to ``False``, to
+guarantee that an old experiment will not be resumed. In the case where
+a matching previous experiment would be found, an exception will be raised.
 
 Adding our own results to an experiment
 ---------------------------------------
@@ -266,8 +303,12 @@ an experiment using the ``cancel()`` method, as follows: ::
 Deleting an experiment
 ----------------------
 
-As for deleting a whole experiment, this is accomplished from the Whetlab website,
-by clicking on EDIT: 
+As for deleting a whole experiment, this can be accomplished either through Python,
+using function ``delete_experiment()`` and providing it with the name of the experiment to delete: ::
+
+    whetlab.delete_experiment(access_token, name="Web page classifier")
+
+or from the Whetlab website, by clicking on EDIT: 
 
 .. image:: whetlab_edit.png
    :width: 600 px
