@@ -18,12 +18,14 @@ class Results():
 	# Add a user created result
 	# '/alpha/results/' POST
 	#
+	# variables - The result list of dictionary objects with updated fields.
 	# task - Task id
 	# userProposed - userProposed
 	# description - description
 	# runDate - <no value>
-	def add(self, task, userProposed, description, runDate, options = {}):
+	def add(self, variables, task, userProposed, description, runDate, options = {}):
 		body = options['body'] if 'body' in options else {}
+		body['variables'] = variables
 		body['task'] = task
 		body['userProposed'] = userProposed
 		body['description'] = description
