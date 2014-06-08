@@ -10,7 +10,7 @@ supported_properties = set(['min','max','size','scale','units','type'])
 required_properties = set(['min','max'])
 default_values = {'size':1,
           'scale':'linear',
-          'units':'',
+          'units':'Reals',
           'type':'float'}
 legal_values = {'size':set([1]),
         'scale':set(['linear','log']),
@@ -24,7 +24,7 @@ outcome_default_values = {'min':-10.,
               'max':10.,
               'size':1,
               'scale':'linear',
-              'units':'',
+              'units':'Reals',
               'type':'float'}
 outcome_legal_values = {'size':set([1]),
             'scale':set(['linear']),
@@ -131,10 +131,10 @@ class Experiment:
         self._client = whetlab_api.Client({},options)
 
         # Make a few obvious asserts
-        if name == '' or type(name) != str:
+        if name == '' or type(name) not in [str,unicode]:
             raise ValueError('Name of experiment must be a non-empty string')
 
-        if type(description) != str:
+        if type(description)  not in [str,unicode]:
             raise ValueError('Description of experiment must be a string')
 
         # For now, we support one task per experiment, and the name and description of the task
@@ -159,86 +159,79 @@ class Experiment:
             if type(outcome) != dict or len(outcome) == 0:
                 raise ValueError('Outcome of experiment must be a non-empty dictionary')
 
-            # Create new experiment
-            res = self._client.experiments().create(name=self.experiment,description=self.experiment_description,user=4)
-            experiment_id = res.body['id']
-            self.experiment_id = experiment_id
-
-            # Create a task for this experiment
-            from datetime import datetime
-            task_name = str(datetime.now())
-            try:
-                res = self._client.tasks().create(experiment=experiment_id,name=self.task,description=self.task_description)
-                self.task_id = res.body['id']
-
-                if 'name' not in outcome:
-                    raise ValueError('Argument outcome should have key \'name\'')
-                self.outcome_name = outcome['name']
+            if 'name' not in outcome:
+                raise ValueError('Argument outcome should have key \'name\'')
+            self.outcome_name = outcome['name']
             
-                # Add specification of parameters to task
-                self.parameters = {}
-                for key in parameters.keys():
-                    param = {}
-                    param.update(parameters[key])
-
-                    # Check if all properties are supported
-                    if param['type'] is 'enum':
-                        raise ValueError("Enum types are not supported yet.  Please use integers instead.")
-
-                    for property in param.iterkeys():
-                        if property not in supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
-                    
-                    # Check if required properties are present
-                    for property in required_properties:
-                        if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
-
-                    # Add default parameters if not present
-                    for property, default in default_values.iteritems():
-                        if property not in param: param[property] = default
-                    
-                    # Check compatibility of properties
-                    if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
-                    for property, legals in legal_values.iteritems():
-                        if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
-
-                    self.parameters[key] = param
-                    #res = self._client.setting().set(name=key,type=param['type'],min=param['min'],max=param['max'],size=param['size'],
-                    #                units=param['units'],experiment=experiment_id, scale=param['scale'], isOutput=False)
-                    res = self._client.setting().set(name=key,experiment=experiment_id, isOutput=False, **param)
-                    self._param_names_to_setting_ids[key] = res.body['id']
-
-                # Add the outcome variable
+            # Add specification of parameters to task
+            settings = []
+            #settings = {}
+            for key in parameters.keys():
                 param = {}
-                param.update(outcome)
-
-                # Check outcome doesn't have the same name as any of the parameters
-                if outcome['name'] in self.parameters:
-                    raise ValueError("Outcome name should not match any of the parameter names")
+                param.update(parameters[key])
 
                 # Check if all properties are supported
+                if param['type'] is 'enum':
+                    raise ValueError("Enum types are not supported yet.  Please use integers instead.")
+
                 for property in param.iterkeys():
-                    if property not in outcome_supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
+                    if property not in supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
                 
                 # Check if required properties are present
-                for property in outcome_required_properties:
+                for property in required_properties:
                     if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
 
                 # Add default parameters if not present
-                for property, default in outcome_default_values.iteritems():
+                for property, default in default_values.iteritems():
                     if property not in param: param[property] = default
                 
                 # Check compatibility of properties
-                for property, legals in outcome_legal_values.iteritems():
+                if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+                for property, legals in legal_values.iteritems():
                     if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
 
-                res = self._client.setting().set(experiment=experiment_id, isOutput=True, **param)
-                self._param_names_to_setting_ids[outcome['name']] = res.body['id']
-            except:
-                # Need to try to clean up the experiment if experiment or task creation failed in
-                # order to prevent creating orphaned tasks
-                res = self._client.experiment(str(experiment_id)).delete()
-                raise
+                param['isOutput'] = False
+                param['name'] = key
+                settings += [param]
+                #settings['name'] = param
 
+            # Add the outcome variable
+            param = {}
+            param.update(outcome)
+
+            # Check outcome doesn't have the same name as any of the parameters
+            if outcome['name'] in parameters:
+                raise ValueError("Outcome name should not match any of the parameter names")
+
+            # Check if all properties are supported
+            for property in param.iterkeys():
+                if property not in outcome_supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
+            
+            # Check if required properties are present
+            for property in outcome_required_properties:
+                if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+
+            # Add default parameters if not present
+            for property, default in outcome_default_values.iteritems():
+                if property not in param: param[property] = default
+            
+            # Check compatibility of properties
+            for property, legals in outcome_legal_values.iteritems():
+                if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+
+            param['isOutput'] = True
+            settings += [param]
+            #settings[outcome['name']] = param
+
+            # Create experiment and task
+            res = self._client.tasks().create(name=self.task,description=self.task_description,settings=settings)
+            experiment_id = res.body['experiment']
+            self.experiment_id = experiment_id
+            self.task_id = res.body['id']
+
+            # Call _sync_with_server in order to fill-in the state of the object 
+            # (e.g. fetching the setting ids)
+            self._sync_with_server()
 
     def _find_experiment(self, name):
         """
@@ -255,7 +248,7 @@ class Experiment:
         more_pages = True
         while more_pages:
             rest_exps = self._client.experiments().get({'query':{'page':page}}).body
-        
+
             # Check if more pages to come
             more_pages = rest_exps['next'] is not None
             page += 1
@@ -285,7 +278,7 @@ class Experiment:
         more_pages = True
         while more_pages:
             rest_tasks = self._client.tasks().get({'query':{'page':page}}).body
-        
+
             # Check if more pages to come
             more_pages = rest_tasks['next'] is not None
             page += 1
@@ -326,6 +319,7 @@ class Experiment:
         # Get settings for this task, to get the parameter and outcome names
         rest_parameters = self._client.settings().get(str(self.experiment_id),{'query':{'page_size':INF_PAGE_SIZE}}).body
         rest_parameters = rest_parameters['results']
+
         self.parameters = {}
         for param in rest_parameters:
             id = param['id']
