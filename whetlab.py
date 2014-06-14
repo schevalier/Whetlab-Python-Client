@@ -20,8 +20,8 @@ python_types = {'float':float,'integer':int}
 
 outcome_supported_properties = set(['units','type','name'])
 outcome_required_properties = set(['name'])
-outcome_default_values = {'min':-10.,
-              'max':10.,
+outcome_default_values = {'min':-100.,
+              'max':100.,
               'size':1,
               'scale':'linear',
               'units':'Reals',
@@ -42,7 +42,10 @@ def delete_experiment(access_token, name):
     :type name: str
     """
 
-    scientist = Experiment(access_token, name, resume=True)
+    try:
+        scientist = Experiment(access_token, name, resume=True)
+    except ValueError:
+        raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
     scientist._delete()
 
 
@@ -224,10 +227,19 @@ class Experiment:
             #settings[outcome['name']] = param
 
             # Create experiment and task
-            res = self._client.tasks().create(name=self.task,description=self.task_description,settings=settings)
-            experiment_id = res.body['experiment']
-            self.experiment_id = experiment_id
-            self.task_id = res.body['id']
+            try:
+                res = self._client.tasks().create(name=self.task,description=self.task_description,settings=settings)
+                experiment_id = res.body['experiment']
+                self.experiment_id = experiment_id
+                self.task_id = res.body['id']
+            except Exception as inst:
+                # If experiment creation doesn't work, then retry resuming the experiment.
+                # This is for cases where two processes are starting an experiment, and
+                # one gets to create it first while the other should be resuming it.
+                self.experiment_id = self._find_experiment(self.experiment)
+                self.task_id = None
+                if not resume or self.experiment_id is None :
+                    raise inst
 
             # Call _sync_with_server in order to fill-in the state of the object 
             # (e.g. fetching the setting ids)
