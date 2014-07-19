@@ -1,10 +1,14 @@
+import os
 import tempfile
+import ConfigParser
 import collections
 import numpy as np
 import whetlab_api
 import time
 
 INF_PAGE_SIZE = 1000000
+
+DEFAULT_API_URL = 'http://api.whetlab.com'
 
 supported_properties = set(['min','max','size','scale','units','type'])
 required_properties = set(['min','max'])
@@ -48,7 +52,20 @@ def delete_experiment(access_token, name):
         raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
     scientist._delete()
 
-
+def load_config():
+    filename = '.whetlab'
+    search_path = ['.', os.path.expanduser('~')]
+    for dir in search_path:
+        full_path = os.path.join(dir, filename)
+        if os.path.exists(full_path):
+            config = ConfigParser.RawConfigParser()
+            config.read(full_path)
+            config_dict = {}
+            if config.has_option('whetlab', 'access_token'):
+                config_dict['access_token'] = config.get('whetlab', 'access_token')
+            if config.has_option('whetlab', 'api_url'):
+                config_dict['api_url'] = config.get('whetlab', 'api_url')
+            return config_dict
 
 class Experiment:
     """
@@ -109,12 +126,13 @@ class Experiment:
     """
 
     def __init__(self,
-                 access_token,
+                 access_token=None,
                  name='Default name',
                  description='Default description',
                  parameters=None,
                  outcome=None,
-                 resume = True):
+                 resume = True,
+                 url=None):
 
         # These are for the client to keep track of things without always 
         # querying the REST server ...
@@ -125,11 +143,23 @@ class Experiment:
         # ... From a parameter name to the setting IDs
         self._param_names_to_setting_ids = {}
 
+        config = load_config()
+        if url is None:
+            if config.has_key('api_url'):
+                url = config['api_url']
+            else:
+                url = DEFAULT_API_URL
+        if access_token is None:
+            if config.has_key('access_token'):
+                access_token = config['access_token']
+            else:
+                raise Exception("No access token specified in dotfile or via constructor.")
+
         # Create REST server client
         options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
                     'user_agent':'whetlab_python_client',
                     'api_version':'api',
-                    'base': 'http://api.whetlab.com'})
+                    'base': url})
         
         self._client = whetlab_api.Client({},options)
 
