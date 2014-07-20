@@ -10,7 +10,7 @@ class ErrorHandler():
 		typ = response.headers.get('content-type')
 
 		if code in range(500, 600):
-			raise ClientError('Error ' + str(code), code)
+                        raise ClientError('There was a problem with the server.', code)
 		elif code in range(400, 500):
 			body = ResponseHandler.get_body(response)
 			message = ''

@@ -1,0 +1,3 @@
+[submodule "examples/Kayak"]
+	path = examples/Kayak
+	url = git@github.com:HIPS/Kayak.git
