@@ -66,6 +66,7 @@ def load_config():
             if config.has_option('whetlab', 'api_url'):
                 config_dict['api_url'] = config.get('whetlab', 'api_url')
             return config_dict
+    return {}
 
 class Experiment:
     """
