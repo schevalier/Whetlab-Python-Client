@@ -117,6 +117,7 @@ We are now ready to start experimenting. We can use ``scientist`` to suggest a f
 Here, ``job`` is a dictionary, whose keys are the names of the hyper-parameters
 and the associated values are suggested values to test: ::
 
+    >>> print job
     {u'C': 750.0025, u'degree': 2}
 
 We can now instantiate
@@ -157,40 +158,6 @@ the best hyper-paramters found so far as follows: ::
 
 This is the hyper-parameter values we should be using to train our
 final SVM classifier [#f3]_.
-
-.. _multiple_suggestions:
-
-Getting multiple suggestions
-----------------------------
-
-In our running example, jobs were suggested and run sequentially, one
-after another. This is not practical however in a situation where we have access
-to multiple computers, on which jobs could be run in parallel. In this
-case, we'd rather obtain multiple suggestsions, run each in parallel
-and provide the results to Whetlab as they come in.
-
-To do this, we can simply call ``suggest()`` multiple times in a row: ::
-
-    job1 = scientist.suggest()
-    job2 = scientist.suggest()
-    job3 = scientist.suggest()
-
-The output of ``suggest()`` will always a new suggestion and will be 
-different from the previous ones: ::
-
-    >> print job1, job2, job3
-    {u'C': 750.0025, u'degree': 2} {u'C': 250.0075, u'degree': 4} {u'C': 375.00625, u'degree': 2}
-
-Jobs that have been suggested but have not been updated with a result
-are called *pending jobs*. In suggesting new jobs, Whetlab will attempt to suggest
-a job which is both promising and complementary to the currently pending jobs.
-
-One implication of this mechanism is that ``suggest()`` should not be used to 
-retrieve the value of a previously suggested (pending) job. To obtain that information,
-use the ``pending()`` method instead: ::
-
-    >> print scientist.pending()
-    [{u'C': 750.0025, u'degree': 2}, {u'C': 250.0075, u'degree': 4}, {u'C': 375.00625, u'degree': 2}]    
 
 Viewing experiments
 -------------------
@@ -303,12 +270,8 @@ an experiment using the ``cancel()`` method, as follows: ::
 Deleting an experiment
 ----------------------
 
-As for deleting a whole experiment, this can be accomplished either through Python,
-using function ``delete_experiment()`` and providing it with the name of the experiment to delete: ::
-
-    whetlab.delete_experiment(access_token, name="Web page classifier")
-
-or from the Whetlab website, by clicking on EDIT: 
+As for deleting a whole experiment, this is accomplished from the Whetlab website,
+by clicking on EDIT: 
 
 .. image:: whetlab_edit.png
    :width: 600 px
@@ -322,6 +285,26 @@ then scrolling down and clicking on DELETE:
 
 In our example, the "Web page classifier" experiment would then
 no longer show up in our list of experiments. 
+
+Whetlab configuration file
+--------------------------
+
+When creating or deleting experiments, each time we had to explicitly
+provide an access token. An alternative and often more convenient way
+of specifying our access token is through a Whetlab configuration
+file.
+
+Either in our current directory or in our home directory (Whetlab will search
+for it in that order), we can simply create a ``.whetlab`` text file containing
+the following lines: ::
+
+    [whetlab]
+    access_token=THIS_IS_MY_ACCESS_TOKEN
+
+where ``THIS_IS_MY_ACCESS_TOKEN`` would be our access token. This would allow
+us to more easily share our Python code that uses Whetlab with other
+Whetlab users who have their own account.
+
 
 .. rubric:: Footnotes
 
