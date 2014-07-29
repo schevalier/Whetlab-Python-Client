@@ -36,7 +36,7 @@ class Result():
 	# description - description
 	# runDate - <no value>
 	# id - <no value>
-	def update(self, variables, task, userProposed, description, runDate, id, options = {}):
+	def update(self, variables, task, userProposed, description, runDate, id, options = {}, **kwargs):
 		body = options['body'] if 'body' in options else {}
 		body['variables'] = variables
 		body['task'] = task
