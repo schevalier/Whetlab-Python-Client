@@ -5,6 +5,8 @@ import collections
 import numpy as np
 import whetlab_api
 import time
+import functools
+import requests
 
 INF_PAGE_SIZE = 1000000
 
@@ -34,6 +36,16 @@ outcome_legal_values = {'size':set([1]),
             'scale':set(['linear']),
             'type':set(['float'])}
 
+def catch_exception(f):
+    @functools.wraps(f)
+    def func(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError('Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.')
+    return func
+
+@catch_exception
 def delete_experiment(access_token, name):
     """
     Delete the experiment with the given name.  
@@ -52,6 +64,7 @@ def delete_experiment(access_token, name):
         raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
     scientist._delete()
 
+@catch_exception
 def load_config():
     filename = '.whetlab'
     search_path = ['.', os.path.expanduser('~')]
@@ -126,6 +139,7 @@ class Experiment:
     :type task: id
     """
 
+    @catch_exception
     def __init__(self,
                  access_token=None,
                  name='Default name',
@@ -276,6 +290,7 @@ class Experiment:
             # (e.g. fetching the setting ids)
             self._sync_with_server()
 
+    @catch_exception
     def _find_experiment(self, name):
         """
         Look for experiment matching name and return its ID.
@@ -302,7 +317,8 @@ class Experiment:
                 if cmp(exp['name'],name) == 0:
                     return exp['id']
         return None
-            
+
+    @catch_exception            
     def _find_task(self, experiment_id, task_name):
         """
         For a given experiment (specified by its ID), look for a task 
@@ -335,6 +351,7 @@ class Experiment:
                     return task['id']
         return None
 
+    @catch_exception
     def _sync_with_server(self):
         """
         Synchronize the client's internals with the REST server.
@@ -402,6 +419,7 @@ class Experiment:
                     self._ids_to_param_values[res_id][v['name']] = v['value']
 
 
+    @catch_exception
     def suggest(self):
         """
         Suggest a new job.
@@ -431,6 +449,8 @@ class Experiment:
         self._ids_to_param_values[result_id] = next
         return next
 
+
+    @catch_exception
     def _get_id(self,param_values):
         """
         Return the result ID corresponding to the given ``param_values``.
@@ -452,6 +472,8 @@ class Experiment:
 
         return id
     
+
+    @catch_exception
     def update(self, param_values, outcome_val):
         """
         Update the experiment with the outcome value associated with some parameter values.
@@ -525,6 +547,8 @@ class Experiment:
             res = self._client.result(str(result_id)).update(**result)
             self._ids_to_outcome_values[result_id] = outcome_val
         
+
+    @catch_exception
     def cancel(self,param_values):
         """
         Cancel a job, by removing it from the jobs recorded so far in the experiment.
@@ -548,6 +572,7 @@ class Experiment:
             print 'Did not find experiment with the provided parameters'
 
 
+    @catch_exception
     def _delete(self):
         """
         Delete the experiment with the given name and description.  
@@ -559,6 +584,7 @@ class Experiment:
         res = self._client.experiment(str(self.experiment_id)).delete()
         print 'Experiment has been deleted'
 
+    @catch_exception
     def pending(self):
         """
         Return the list of jobs which have been suggested, but for which no 
@@ -578,6 +604,7 @@ class Experiment:
                 ret.append(self._ids_to_param_values[key])
         return list(ret)
 
+    @catch_exception
     def clear_pending(self):
         """
         Cancel jobs (results) that are marked as pending.
@@ -587,6 +614,7 @@ class Experiment:
         for job in p:
             self.cancel(job)
 
+    @catch_exception
     def best(self):
         """
         Return job with best outcome found so far.
@@ -606,6 +634,7 @@ class Experiment:
         result_id = ids[outcomes.argmax()]
         return self._ids_to_param_values[result_id]
     
+    @catch_exception
     def report(self):
         """
         Plot a visual report of the progress made so far in the experiment.
