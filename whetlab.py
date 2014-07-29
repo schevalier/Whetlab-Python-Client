@@ -259,7 +259,9 @@ class Experiment:
 
             # Create experiment and task
             try:
-                res = self._client.tasks().create(name=self.task,description=self.task_description,settings=settings)
+                res = self._client.tasks().create(name=self.task, 
+                                                  description=self.task_description,
+                                                  settings=settings)
                 experiment_id = res.body['experiment']
                 self.experiment_id = experiment_id
                 self.task_id = res.body['id']
