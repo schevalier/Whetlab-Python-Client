@@ -155,7 +155,8 @@ the possibility of resuming previously run experiments
 </div>
 <p>Here, <tt class="docutils literal"><span class="pre">job</span></tt> is a dictionary, whose keys are the names of the hyper-parameters
 and the associated values are suggested values to test:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">u&#39;C&#39;</span><span class="p">:</span> <span class="mf">750.0025</span><span class="p">,</span> <span class="s">u&#39;degree&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">job</span>
+<span class="go">{u&#39;C&#39;: 750.0025, u&#39;degree&#39;: 2}</span>
 </pre></div>
 </div>
 <p>We can now instantiate
@@ -195,36 +196,6 @@ the best hyper-paramters found so far as follows:</p>
 </div>
 <p>This is the hyper-parameter values we should be using to train our
 final SVM classifier <a class="footnote-reference" href="#f3" id="id2">[2]</a>.</p>
-</div>
-<div class="section" id="getting-multiple-suggestions">
-<span id="multiple-suggestions"></span><h2>Getting multiple suggestions<a class="headerlink" href="#getting-multiple-suggestions" title="Permalink to this headline">¶</a></h2>
-<p>In our running example, jobs were suggested and run sequentially, one
-after another. This is not practical however in a situation where we have access
-to multiple computers, on which jobs could be run in parallel. In this
-case, we&#8217;d rather obtain multiple suggestsions, run each in parallel
-and provide the results to Whetlab as they come in.</p>
-<p>To do this, we can simply call <tt class="docutils literal"><span class="pre">suggest()</span></tt> multiple times in a row:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">job1</span> <span class="o">=</span> <span class="n">scientist</span><span class="o">.</span><span class="n">suggest</span><span class="p">()</span>
-<span class="n">job2</span> <span class="o">=</span> <span class="n">scientist</span><span class="o">.</span><span class="n">suggest</span><span class="p">()</span>
-<span class="n">job3</span> <span class="o">=</span> <span class="n">scientist</span><span class="o">.</span><span class="n">suggest</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>The output of <tt class="docutils literal"><span class="pre">suggest()</span></tt> will always a new suggestion and will be
-different from the previous ones:</p>
-<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; print job1, job2, job3
-{u&#39;C&#39;: 750.0025, u&#39;degree&#39;: 2} {u&#39;C&#39;: 250.0075, u&#39;degree&#39;: 4} {u&#39;C&#39;: 375.00625, u&#39;degree&#39;: 2}
-</pre></div>
-</div>
-<p>Jobs that have been suggested but have not been updated with a result
-are called <em>pending jobs</em>. In suggesting new jobs, Whetlab will attempt to suggest
-a job which is both promising and complementary to the currently pending jobs.</p>
-<p>One implication of this mechanism is that <tt class="docutils literal"><span class="pre">suggest()</span></tt> should not be used to
-retrieve the value of a previously suggested (pending) job. To obtain that information,
-use the <tt class="docutils literal"><span class="pre">pending()</span></tt> method instead:</p>
-<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; print scientist.pending()
-[{u&#39;C&#39;: 750.0025, u&#39;degree&#39;: 2}, {u&#39;C&#39;: 250.0075, u&#39;degree&#39;: 4}, {u&#39;C&#39;: 375.00625, u&#39;degree&#39;: 2}]
-</pre></div>
-</div>
 </div>
 <div class="section" id="viewing-experiments">
 <h2>Viewing experiments<a class="headerlink" href="#viewing-experiments" title="Permalink to this headline">¶</a></h2>
@@ -308,17 +279,30 @@ an experiment using the <tt class="docutils literal"><span class="pre">cancel()<
 </div>
 <div class="section" id="deleting-an-experiment">
 <h2>Deleting an experiment<a class="headerlink" href="#deleting-an-experiment" title="Permalink to this headline">¶</a></h2>
-<p>As for deleting a whole experiment, this can be accomplished either through Python,
-using function <tt class="docutils literal"><span class="pre">delete_experiment()</span></tt> and providing it with the name of the experiment to delete:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">whetlab</span><span class="o">.</span><span class="n">delete_experiment</span><span class="p">(</span><span class="n">access_token</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;Web page classifier&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>or from the Whetlab website, by clicking on EDIT:</p>
+<p>As for deleting a whole experiment, this is accomplished from the Whetlab website,
+by clicking on EDIT:</p>
 <a class="reference internal image-reference" href="_images/whetlab_edit.png"><img alt="_images/whetlab_edit.png" class="align-center" src="_images/whetlab_edit.png" style="width: 600px;" /></a>
 <p>then scrolling down and clicking on DELETE:</p>
 <a class="reference internal image-reference" href="_images/whetlab_delete.png"><img alt="_images/whetlab_delete.png" class="align-center" src="_images/whetlab_delete.png" style="width: 600px;" /></a>
 <p>In our example, the &#8220;Web page classifier&#8221; experiment would then
 no longer show up in our list of experiments.</p>
+</div>
+<div class="section" id="whetlab-configuration-file">
+<h2>Whetlab configuration file<a class="headerlink" href="#whetlab-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>When creating or deleting experiments, each time we had to explicitly
+provide an access token. An alternative and often more convenient way
+of specifying our access token is through a Whetlab configuration
+file.</p>
+<p>Either in our current directory or in our home directory (Whetlab will search
+for it in that order), we can simply create a <tt class="docutils literal"><span class="pre">.whetlab</span></tt> text file containing
+the following lines:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">whetlab</span><span class="p">]</span>
+<span class="n">access_token</span><span class="o">=</span><span class="n">THIS_IS_MY_ACCESS_TOKEN</span>
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">THIS_IS_MY_ACCESS_TOKEN</span></tt> would be our access token. This would allow
+us to more easily share our Python code that uses Whetlab with other
+Whetlab users who have their own account.</p>
 <p class="rubric">Footnotes</p>
 <table class="docutils footnote" frame="void" id="f1" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
@@ -350,11 +334,11 @@ no longer show up in our list of experiments.</p>
 <li><a class="reference internal" href="#a-scikit-learn-example">A scikit-learn example</a></li>
 <li><a class="reference internal" href="#setting-up-a-whetlab-experiment">Setting up a Whetlab experiment</a></li>
 <li><a class="reference internal" href="#running-the-experiment">Running the experiment</a></li>
-<li><a class="reference internal" href="#getting-multiple-suggestions">Getting multiple suggestions</a></li>
 <li><a class="reference internal" href="#viewing-experiments">Viewing experiments</a></li>
 <li><a class="reference internal" href="#resuming-experiments">Resuming experiments</a></li>
 <li><a class="reference internal" href="#adding-our-own-results-to-an-experiment">Adding our own results to an experiment</a></li>
 <li><a class="reference internal" href="#deleting-an-experiment">Deleting an experiment</a></li>
+<li><a class="reference internal" href="#whetlab-configuration-file">Whetlab configuration file</a></li>
 </ul>
 </li>
 </ul>
