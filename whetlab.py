@@ -273,7 +273,9 @@ class Experiment:
 
             # Create experiment and task
             try:
-                res = self._client.tasks().create(name=self.task,description=self.task_description,settings=settings)
+                res = self._client.tasks().create(name=self.task, 
+                                                  description=self.task_description,
+                                                  settings=settings)
                 experiment_id = res.body['experiment']
                 self.experiment_id = experiment_id
                 self.task_id = res.body['id']
@@ -434,7 +436,7 @@ class Experiment:
         # Poll the server for the actual variable values in the suggestion.  
         variables = res.body['variables']
         while not variables:
-            time.sleep(2)
+            time.sleep(2) # really?
             result = self._client.result(str(result_id)).get()
             variables = result.body['variables']
 
@@ -443,7 +445,7 @@ class Experiment:
         for var in variables:
             # Don't return the outcome variable
             if cmp(var['name'],self.outcome_name) != 0:
-                next[var['name']] = var['value']
+                next[var['name']] = python_types[self.parameters[var['name']]['type']](var['value'])
             
         # Keep track of id / param_values relationship
         self._ids_to_param_values[result_id] = next

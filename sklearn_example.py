@@ -6,9 +6,8 @@ parameters = {'C':{'type':'float', 'min':1.0, 'max':1000.0, 'size':1},
 outcome = {'name':'Classification accuracy', 'type':'float'}
 name = 'sklearn SVM'
 description = 'Training an SVM using the sklearn library'
-access_token = '' # PUT VALID ACCESS TOKEN HERE
 scientist = whetlab.Experiment(name=name, description=description,
-        access_token=access_token, parameters=parameters, outcome=outcome)
+                               parameters=parameters, outcome=outcome)
 
 # Setup scikit-learn experiment
 from sklearn import svm, cross_validation
