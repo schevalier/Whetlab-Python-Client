@@ -52,7 +52,7 @@
 <span id="library-documentation"></span><h1>Library Documentation<a class="headerlink" href="#module-whetlab" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="whetlab.Experiment">
-<em class="property">class </em><tt class="descclassname">whetlab.</tt><tt class="descname">Experiment</tt><big>(</big><em>access_token</em>, <em>name='Default name'</em>, <em>description='Default description'</em>, <em>parameters=None</em>, <em>outcome=None</em>, <em>resume=True</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">whetlab.</tt><tt class="descname">Experiment</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Whetlab tuning experiment.</p>
 <p>A <tt class="docutils literal"><span class="pre">name</span></tt> and <tt class="docutils literal"><span class="pre">description</span></tt> for the experiment must be specified.
 A Whetlab access token must also be provided.
@@ -115,7 +115,7 @@ with the same name and description is found).</p>
 </table>
 <dl class="method">
 <dt id="whetlab.Experiment.best">
-<tt class="descname">best</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.best"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.best" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">best</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.best"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.best" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return job with best outcome found so far.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -131,7 +131,7 @@ with the same name and description is found).</p>
 
 <dl class="method">
 <dt id="whetlab.Experiment.cancel">
-<tt class="descname">cancel</tt><big>(</big><em>param_values</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel a job, by removing it from the jobs recorded so far in the experiment.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -145,13 +145,13 @@ with the same name and description is found).</p>
 
 <dl class="method">
 <dt id="whetlab.Experiment.clear_pending">
-<tt class="descname">clear_pending</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.clear_pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.clear_pending" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">clear_pending</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.clear_pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.clear_pending" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel jobs (results) that are marked as pending.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="whetlab.Experiment.pending">
-<tt class="descname">pending</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.pending" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">pending</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.pending" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the list of jobs which have been suggested, but for which no 
 result has been provided yet.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -168,13 +168,13 @@ result has been provided yet.</p>
 
 <dl class="method">
 <dt id="whetlab.Experiment.report">
-<tt class="descname">report</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.report" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">report</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a visual report of the progress made so far in the experiment.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="whetlab.Experiment.suggest">
-<tt class="descname">suggest</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.suggest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">suggest</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.suggest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Suggest a new job.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -190,7 +190,7 @@ result has been provided yet.</p>
 
 <dl class="method">
 <dt id="whetlab.Experiment.update">
-<tt class="descname">update</tt><big>(</big><em>param_values</em>, <em>outcome_val</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.update" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the experiment with the outcome value associated with some parameter values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -210,7 +210,7 @@ result has been provided yet.</p>
 
 <dl class="function">
 <dt id="whetlab.delete_experiment">
-<tt class="descclassname">whetlab.</tt><tt class="descname">delete_experiment</tt><big>(</big><em>access_token</em>, <em>name</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#delete_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.delete_experiment" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">whetlab.</tt><tt class="descname">delete_experiment</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#delete_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.delete_experiment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete the experiment with the given name.</p>
 <p>Important, this cancels the experiment and removes all saved results!</p>
 <table class="docutils field-list" frame="void" rules="none">
