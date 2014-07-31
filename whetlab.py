@@ -10,19 +10,37 @@ import requests
 
 INF_PAGE_SIZE = 1000000
 
-DEFAULT_API_URL = 'http://api.whetlab.com'
+DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
 
-supported_properties = set(['min','max','size','scale','units','type'])
-required_properties = set(['min','max'])
-default_values = {'size':1,
-          'scale':'linear',
-          'units':'Reals',
-          'type':'float'}
-legal_values = {'size':set([1]),
-        'scale':set(['linear','log']),
-        'type':set(['float', 'integer'])}
+supported_properties = set(['min','max','size','scale','units','type','categories'])
+required_properties = {
+    'float':set(['min','max']),
+    'integer':set(['min','max']),
+    'enum':set(['categories'])
+}
+default_values = {
+    'float':{
+        'size':1,
+        'scale':'linear',
+        'units':'Reals',
+    },
+    'integer':{
+        'size':1,
+        'scale':'linear',
+        'units':'Integers',
+    },
+    'enum':{
+        'size':1
+    },
+    'type':'float'
+}
+legal_values = {
+    'size':set([1]),
+    'scale':set(['linear','log']),
+    'type':set(['float', 'integer', 'enum'])
+}
 
-python_types = {'float':float,'integer':int}
+python_types = {'float':float,'integer':int,'enum':str}
 
 outcome_supported_properties = set(['units','type','name'])
 outcome_required_properties = set(['name'])
@@ -43,6 +61,11 @@ def catch_exception(f):
             return f(*args, **kwargs)
         except requests.exceptions.ConnectionError:
             raise RuntimeError('Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.')
+        except whetlab_api.error.ClientError as e:
+            if e.message == "Unable to understand the content type of response returned by request responsible for error":
+                raise RuntimeError('The server is currently busy, please try again shortly.')
+            else:
+                raise e
     return func
 
 @catch_exception
@@ -105,7 +128,7 @@ class Experiment:
     should have the keys:
 
     * ``'name'``: name (``str``) for the outcome being optimized
-    * ``'type'``: type of the parameter (default: ``'float'``)
+    * ``'type'``: type of the parameter, either ``'float'``, ``'int'`` or  ``'enum'`` (default: ``'float'``)
     * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
 
     If ``name`` and ``description`` match a previously created experiment,
@@ -218,31 +241,20 @@ class Experiment:
                 param = {}
                 param.update(parameters[key])
 
-                # Check if all properties are supported
-                if param['type'] is 'enum':
-                    raise ValueError("Enum types are not supported yet.  Please use integers instead.")
-
                 for property in param.iterkeys():
-                    if property not in supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
-                
-                # Check if required properties are present
-                for property in required_properties:
-                    if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+                    if property not in supported_properties:
+                        raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
 
-                # Add default parameters if not present
-                for property, default in default_values.iteritems():
-                    if property not in param: param[property] = default
-                
-                # Check compatibility of properties
+                ptype = param['type'] if param.has_key('type') else default_values['type']
 
-                if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
-
-                if param['type'] is 'integer':
-                    if np.mod(param['min'],1) != 0 : raise ValueError("Parameter '" + key + "': 'min' should be an integer")
-                    if np.mod(param['max'],1) != 0 : raise ValueError("Parameter '" + key + "': 'max' should be an integer")
-
-                for property, legals in legal_values.iteritems():
-                    if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+                if ptype == 'integer':
+                    self._validate_integer(key, param)
+                elif ptype == 'float':
+                    self._validate_float(key, param)
+                elif ptype == 'enum':
+                    self._validate_enum(key, param)
+                else:
+                    raise ValueError("Parameter '%s' uses unsupported type '%s'." % (key, ptype))
 
                 param['isOutput'] = False
                 param['name'] = key
@@ -299,6 +311,67 @@ class Experiment:
             self._sync_with_server()
 
     @catch_exception
+    def _validate_integer(self, key, param):
+        # Check if required properties are present
+        for property in required_properties['integer']:
+            if property not in param:
+                raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+
+        # Add default parameters if not present
+        for property, default in default_values['integer'].iteritems():
+            if property not in param:
+                param[property] = default
+
+        # Check compatibility of properties
+        if param['min'] >= param['max']:
+            raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+
+        if np.mod(param['min'],1) != 0 : raise ValueError("Parameter '" + key + "': 'min' should be an integer")
+        if np.mod(param['max'],1) != 0 : raise ValueError("Parameter '" + key + "': 'max' should be an integer")
+
+        for property, legals in legal_values.iteritems():
+            if param[property] not in legals:
+                raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+
+    @catch_exception
+    def _validate_float(self, key, param):
+        # Check if required properties are present
+        for property in required_properties['float']:
+            if property not in param:
+                raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+
+        # Add default parameters if not present
+        for property, default in default_values['float'].iteritems():
+            if property not in param:
+                param[property] = default
+
+        # Check compatibility of properties
+        if param['min'] >= param['max']:
+            raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+
+        for property, legals in legal_values.iteritems():
+            if param[property] not in legals:
+                raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+
+
+    @catch_exception
+    def _validate_enum(self, key, param):
+        # Check if required properties are present
+        if 'categories' not in param:
+            raise ValueError("Parameter '%s': property 'categories' must be defined" % key)
+
+        # Add default parameters if not present
+        for property, default in default_values['enum'].iteritems():
+            if property not in param:
+                param[property] = default
+
+        # Check compatibility of properties
+        if len(param['categories']) < 3:
+            raise ValueError("Parameter '%s': must give at least 3 categories." % key)
+
+        if not all([isinstance(c,python_types['enum']) for c in param['categories']]):
+            raise ValueError("Parameter '%s': categories must be of type %s." % key, python_types['enum'])
+
     def _find_experiment(self, name):
         """
         Look for experiment matching name and return its ID.

@@ -26,7 +26,7 @@ class Tasks():
 		body['name'] = name
 		body['description'] = description
 		body['settings'] = settings
-
+		
 		response = self.client.post('/alpha/tasks/', body, options)
 
 		return response
