@@ -13,8 +13,9 @@ def test_required_prop_are_supported():
     """ All required properties should be supported, for parameters and outcome. """
     
     # Parameters
-    for x in whetlab.required_properties:
-        assert( x in whetlab.supported_properties )
+    for props in whetlab.required_properties.values():
+        for x in props:
+            assert( x in whetlab.supported_properties )
 
     # Outcome
     for x in whetlab.outcome_required_properties:
