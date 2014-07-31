@@ -4,7 +4,7 @@ import numpy as np
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1}}
-name = 'Braninhoo 4'
+name = 'Braninhoo 6'
 description = 'Optimize the braninhoo optimization benchmark'
 outcome = {'name':'Negative Braninhoo output', 'type':'float'}
 scientist = whetlab.Experiment(name=name, description=description,
@@ -12,6 +12,8 @@ scientist = whetlab.Experiment(name=name, description=description,
 
 # Braninhoo function
 def braninhoo(X,Y):
+    if X > 10:
+        return np.nan
     return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10;
 
 for i in range(10000):

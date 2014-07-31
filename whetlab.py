@@ -234,7 +234,13 @@ class Experiment:
                     if property not in param: param[property] = default
                 
                 # Check compatibility of properties
+
                 if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+
+                if param['type'] is 'integer':
+                    if np.mod(param['min'],1) != 0 : raise ValueError("Parameter '" + key + "': 'min' should be an integer")
+                    if np.mod(param['max'],1) != 0 : raise ValueError("Parameter '" + key + "': 'max' should be an integer")
+
                 for property, legals in legal_values.iteritems():
                     if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
 
