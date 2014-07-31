@@ -200,6 +200,18 @@ class TestExperiment:
                                        outcome=default_outcome)
 
     @raises(ValueError)
+    def test_float_for_int_bounds(self):
+        """ Parameter properties 'min' and 'max' must be integers if the parameter is an integer. """
+
+        name = 'test ' + str(time())
+        bad_parameters = { 'p1':{'type':'integer', 'min':0.0, 'max':0.5, 'size':1}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    @raises(ValueError)
     def test_legal_property_value(self):
         """ Parameter property must take a legal value. """
 
