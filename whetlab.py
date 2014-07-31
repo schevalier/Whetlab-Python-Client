@@ -8,19 +8,37 @@ import time
 
 INF_PAGE_SIZE = 1000000
 
-DEFAULT_API_URL = 'http://api.whetlab.com'
+DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
 
-supported_properties = set(['min','max','size','scale','units','type'])
-required_properties = set(['min','max'])
-default_values = {'size':1,
-          'scale':'linear',
-          'units':'Reals',
-          'type':'float'}
-legal_values = {'size':set([1]),
-        'scale':set(['linear','log']),
-        'type':set(['float', 'integer'])}
+supported_properties = set(['min','max','size','scale','units','type','categories'])
+required_properties = {
+    'float':set(['min','max']),
+    'integer':set(['min','max']),
+    'enum':set(['categories'])
+}
+default_values = {
+    'float':{
+        'size':1,
+        'scale':'linear',
+        'units':'Reals',
+    },
+    'integer':{
+        'size':1,
+        'scale':'linear',
+        'units':'Integers',
+    },
+    'enum':{
+        'size':1
+    },
+    'type':'float'
+}
+legal_values = {
+    'size':set([1]),
+    'scale':set(['linear','log']),
+    'type':set(['float', 'integer', 'enum'])
+}
 
-python_types = {'float':float,'integer':int}
+python_types = {'float':[float],'integer':[int],'enum':[tuple,list]}
 
 outcome_supported_properties = set(['units','type','name'])
 outcome_required_properties = set(['name'])
@@ -204,25 +222,20 @@ class Experiment:
                 param = {}
                 param.update(parameters[key])
 
-                # Check if all properties are supported
-                if param['type'] is 'enum':
-                    raise ValueError("Enum types are not supported yet.  Please use integers instead.")
-
                 for property in param.iterkeys():
-                    if property not in supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
-                
-                # Check if required properties are present
-                for property in required_properties:
-                    if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+                    if property not in supported_properties:
+                        raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
 
-                # Add default parameters if not present
-                for property, default in default_values.iteritems():
-                    if property not in param: param[property] = default
-                
-                # Check compatibility of properties
-                if param['min'] >= param['max'] : raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
-                for property, legals in legal_values.iteritems():
-                    if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+                ptype = param['type'] if param.has_key('type') else default_values['type']
+
+                if ptype == 'integer':
+                    self._validate_integer(key, param)
+                elif ptype == 'float':
+                    self._validate_float(key, param)
+                elif ptype == 'enum':
+                    self._validate_enum(key, param)
+                else:
+                    raise ValueError("Parameter '%s' uses unsupported type '%s'." % (key, ptype))
 
                 param['isOutput'] = False
                 param['name'] = key
@@ -275,6 +288,62 @@ class Experiment:
             # Call _sync_with_server in order to fill-in the state of the object 
             # (e.g. fetching the setting ids)
             self._sync_with_server()
+
+    def _validate_integer(self, key, param):
+        # Check if required properties are present
+        for property in required_properties['integer']:
+            if property not in param:
+                raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+
+        # Add default parameters if not present
+        for property, default in default_values['integer'].iteritems():
+            if property not in param:
+                param[property] = default
+
+        # Check compatibility of properties
+        if param['min'] >= param['max']:
+            raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+
+        for property, legals in legal_values.iteritems():
+            if param[property] not in legals:
+                raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+
+    def _validate_float(self, key, param):
+        # Check if required properties are present
+        for property in required_properties['float']:
+            if property not in param:
+                raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+
+        # Add default parameters if not present
+        for property, default in default_values['float'].iteritems():
+            if property not in param:
+                param[property] = default
+
+        # Check compatibility of properties
+        if param['min'] >= param['max']:
+            raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
+
+        for property, legals in legal_values.iteritems():
+            if param[property] not in legals:
+                raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+
+
+    def _validate_enum(self, key, param):
+        # Check if required properties are present
+        if 'categories' not in param:
+            raise ValueError("Parameter '%s': property 'categories' must be defined" % key)
+
+        # Add default parameters if not present
+        for property, default in default_values['enum'].iteritems():
+            if property not in param:
+                param[property] = default
+
+        # Check compatibility of properties
+        if len(param['categories']) < 3:
+            raise ValueError("Parameter '%s': must give at least 3 categories." % key)
+
+        if not all([isinstance(c,str) for c in param['categories']]):
+            raise ValueError("Parameter '%s': categories must be strings." % key)
 
     def _find_experiment(self, name):
         """
@@ -471,7 +540,7 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' not valid")
             if value < self.parameters[param]['min'] or value > self.parameters[param]['max']:
                 raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
-            if type(value) != python_types[self.parameters[param]['type']]:
+            if type(value) not in python_types[self.parameters[param]['type']]:
                 raise TypeError("Parameter '" +param+ "' should be of type " + self.parameters[param]['type'])
 
         # Check is all parameter values are specified
