@@ -7,7 +7,6 @@ from .api.experiment import Experiment
 from .api.settings import Settings
 from .api.users import Users
 from .api.results import Results
-from .api.tasks import Tasks
 from .api.suggest import Suggest
 from .api.experiments import Experiments
 from .api.setting import Setting
@@ -48,17 +47,13 @@ class Client():
 	#
 	def results(self):
 		return Results(self.http_client)
-
-	# Returns the tasks set for a user
-	#
-	def tasks(self):
-		return Tasks(self.http_client)
+		return Experiments(self.http_client)
 
 	# Ask the server to propose a new set of parameters to run the next experiment
 	#
-	# taskid - Identifier of corresponding task
-	def suggest(self, taskid):
-		return Suggest(taskid, self.http_client)
+	# exptid - Identifier of corresponding experiment
+	def suggest(self, exptid):
+		return Suggest(exptid, self.http_client)
 
 	# Returns the experiments set for a user
 	#

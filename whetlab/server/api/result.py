@@ -31,19 +31,18 @@ class Result():
 	# '/alpha/results/:id/' PATCH
 	#
 	# variables - The result list of dictionary objects with updated fields.
-	# task - Task id
+	# experiment - Experiment id
 	# userProposed - userProposed
 	# description - description
-	# runDate - <no value>
 	# id - <no value>
-	def update(self, variables, task, userProposed, description, runDate, id, options = {}, **kwargs):
+	def update(self, variables, experiment, userProposed, description, id, options = {}, **kwargs):
 		body = options['body'] if 'body' in options else {}
-		body['variables'] = variables
-		body['task'] = task
+
+		body['variables']    = variables
+		body['experiment']   = experiment
 		body['userProposed'] = userProposed
-		body['description'] = description
-		body['runDate'] = runDate
-		body['id'] = id
+		body['description']  = description
+		body['id']           = id
 
 		response = self.client.patch('/alpha/results/' + self.id + '/', body, options)
 
@@ -53,19 +52,18 @@ class Result():
 	# '/alpha/results/:id/' PUT
 	#
 	# variables - The result list of dictionary objects with updated fields.
-	# task - Task id
+	# experiment - Experiment id
 	# userProposed - userProposed
 	# description - description
-	# runDate - <no value>
 	# id - <no value>
-	def replace(self, variables, task, userProposed, description, runDate, id, options = {}):
+	def replace(self, variables, experiment, userProposed, description, id, options = {}):
 		body = options['body'] if 'body' in options else {}
-		body['variables'] = variables
-		body['task'] = task
+
+		body['variables']    = variables
+		body['experiment']   = experiment
 		body['userProposed'] = userProposed
-		body['description'] = description
-		body['runDate'] = runDate
-		body['id'] = id
+		body['description']  = description
+		body['id']           = id
 
 		response = self.client.put('/alpha/results/' + self.id + '/', body, options)
 

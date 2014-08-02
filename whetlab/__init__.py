@@ -158,8 +158,6 @@ class Experiment:
     :type outcome: dict
     :ivar experiment_id: ID of the experiment (useful for resuming).
     :type experiment_id: int
-    :ivar task_id: ID of the task (useful for resuming).
-    :type task: id
     """
 
     @catch_exception
@@ -208,15 +206,10 @@ class Experiment:
         if type(description)  not in [str,unicode]:
             raise ValueError('Description of experiment must be a string')
 
-        # For now, we support one task per experiment, and the name and description of the task
-        # is the same as the experiment's
         self.experiment = name
         self.experiment_description = description
-        self.task = name
-        self.task_description = description
 
         self.experiment_id = self._find_experiment(self.experiment)
-        self.task_id = None
 
         if self.experiment_id is not None and resume:
             # Sync all the internals with the REST server
@@ -234,7 +227,7 @@ class Experiment:
                 raise ValueError('Argument outcome should have key \'name\'')
             self.outcome_name = outcome['name']
             
-            # Add specification of parameters to task
+            # Add specification of parameters to experiment.
             settings = []
             #settings = {}
             for key in parameters.keys():
@@ -289,20 +282,17 @@ class Experiment:
             settings += [param]
             #settings[outcome['name']] = param
 
-            # Create experiment and task
+            # Create experiment.
             try:
-                res = self._client.tasks().create(name=self.task, 
-                                                  description=self.task_description,
-                                                  settings=settings)
-                experiment_id = res.body['experiment']
-                self.experiment_id = experiment_id
-                self.task_id = res.body['id']
+                res = self._client.experiments().create(name=self.experiment, 
+                                                        description=self.experiment_description,
+                                                        settings=settings)
+                self.experiment_id = res.body['id']
             except Exception as inst:
                 # If experiment creation doesn't work, then retry resuming the experiment.
                 # This is for cases where two processes are starting an experiment, and
                 # one gets to create it first while the other should be resuming it.
                 self.experiment_id = self._find_experiment(self.experiment)
-                self.task_id = None
                 if not resume or self.experiment_id is None :
                     raise inst
 
@@ -399,39 +389,6 @@ class Experiment:
                     return exp['id']
         return None
 
-    @catch_exception            
-    def _find_task(self, experiment_id, task_name):
-        """
-        For a given experiment (specified by its ID), look for a task 
-        matching a given name and return its ID.
-
-        :param experiment_id: Experiment's ID
-        :type experiment_id: int
-        :param name: Task's name
-        :type name: str
-        :return: Task's ID.
-        :rtype: int
-        """
-
-        # Look one page at a time
-        page = 1
-        more_pages = True
-        while more_pages:
-            rest_tasks = self._client.tasks().get({'query':{'page':page}}).body
-
-            # Check if more pages to come
-            more_pages = rest_tasks['next'] is not None
-            page += 1
-
-            # Find in current page whether we find the task we are looking for
-            rest_tasks = rest_tasks['results']
-            found = False
-            for task in rest_tasks:
-                if cmp(task['experiment'],experiment_id) == 0\
-                        and cmp(task['name'],task_name) == 0:
-                    return task['id']
-        return None
-
     @catch_exception
     def _sync_with_server(self):
         """
@@ -442,22 +399,12 @@ class Experiment:
         self.experiment = res['name']
         self.experiment_description = res['description']
 
-        if self.task_id is None:
-            self.task_id = self._find_task(self.experiment_id, self.task)
-            if self.task_id is None:
-                raise ValueError('Task with name \''+self.task+'\' not found')
-        else:
-            res = self._client.tasks().get({'query':{'id':self.task_id}}).body['results'][0]
-            self.task = res['name']
-            self.task_description = res['description']
-            
-
         # Reset internals
         self._ids_to_param_values = {}
         self._ids_to_outcome_values = {}
         self._param_names_to_setting_ids = {}
 
-        # Get settings for this task, to get the parameter and outcome names
+        # Get settings for this experiment, to get the parameter and outcome names
         rest_parameters = self._client.settings().get(str(self.experiment_id),{'query':{'page_size':INF_PAGE_SIZE}}).body
         rest_parameters = rest_parameters['results']
 
@@ -481,8 +428,8 @@ class Experiment:
                 self.parameters[name] = {'type':type,'min':min,'max':max,
                              'size':size,'units':units,'scale':scale}
 
-        # Get results generated so far for this task
-        rest_results = self._client.results().get({'query': {'task':self.task_id,'page_size':INF_PAGE_SIZE}}).body['results']
+        # Get results generated so far for this experiment
+        rest_results = self._client.results().get({'query': {'experiment':self.experiment_id,'page_size':INF_PAGE_SIZE}}).body['results']
         # Construct things needed by client internally, to keep track of
         # all the results
         for res in rest_results:
@@ -509,7 +456,7 @@ class Experiment:
         :rtype: dict
         """
 
-        res = self._client.suggest(str(self.task_id)).go()
+        res = self._client.suggest(str(self.experiment_id)).go()
         result_id = res.body['id']
 
         # Poll the server for the actual variable values in the suggestion.  
@@ -612,7 +559,7 @@ class Experiment:
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
                         
-            res = self._client.results().add(variables, self.task_id, True, '', '')                    
+            res = self._client.results().add(variables, self._id, True, '', '')                    
             result_id = res.body['id']
 
             self._ids_to_param_values[result_id] = param_values

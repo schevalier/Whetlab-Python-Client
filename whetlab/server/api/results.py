@@ -19,17 +19,16 @@ class Results():
 	# '/alpha/results/' POST
 	#
 	# variables - The result list of dictionary objects with updated fields.
-	# task - Task id
+	# experiment - Experiment id
 	# userProposed - userProposed
 	# description - description
-	# runDate - <no value>
-	def add(self, variables, task, userProposed, description, runDate, options = {}):
+	def add(self, variables, experiment, userProposed, description, options = {}):
 		body = options['body'] if 'body' in options else {}
-		body['variables'] = variables
-		body['task'] = task
+
+		body['variables']    = variables
+		body['experiment']   = experiment
 		body['userProposed'] = userProposed
-		body['description'] = description
-		body['runDate'] = runDate
+		body['description']  = description
 
 		response = self.client.post('/alpha/results/', body, options)
 

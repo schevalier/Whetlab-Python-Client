@@ -5,7 +5,6 @@ from . import experiment
 from . import settings
 from . import users
 from . import results
-from . import tasks
 from . import suggest
 from . import experiments
 from . import setting
