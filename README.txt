@@ -26,4 +26,10 @@ Installation is really simple.  Simply navigate to the directory containing whet
 
 Getting Started
 ===============
-We have written up a [tutorial](./doc/html/_build/index.html) to get you up and running quickly with whetlab.  If you're feeling really impatient there are also a number of example scripts in this directory to demonstrate the usage of the Python client.  Just log in to [Whetlab](http://api.whetlab.com), navigate to the Account page and grab your api token to get started.
+
+We have written up a [tutorial](./doc/tutorial.rst) to get
+you up and running quickly with whetlab.  If you're feeling really
+impatient there are also a number of example scripts in this directory
+to demonstrate the usage of the Python client.  Just log in to
+[Whetlab](http://api.whetlab.com), navigate to the Account page and
+grab your api token to get started.

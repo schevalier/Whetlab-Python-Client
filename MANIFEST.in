@@ -1,0 +1,4 @@
+global-include *.rst
+global-include *.txt
+recursive-include doc *
+recursive-include examples *

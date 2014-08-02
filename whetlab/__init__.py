@@ -3,7 +3,7 @@ import tempfile
 import ConfigParser
 import collections
 import numpy as np
-import whetlab_api
+import server
 import time
 import functools
 import requests
@@ -61,7 +61,7 @@ def catch_exception(f):
             return f(*args, **kwargs)
         except requests.exceptions.ConnectionError:
             raise RuntimeError('Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.')
-        except whetlab_api.error.ClientError as e:
+        except server.error.ClientError as e:
             if e.message == "Unable to understand the content type of response returned by request responsible for error":
                 raise RuntimeError('The server is currently busy, please try again shortly.')
             else:
@@ -199,7 +199,7 @@ class Experiment:
                     'api_version':'api',
                     'base': url})
         
-        self._client = whetlab_api.Client({},options)
+        self._client = server.Client({},options)
 
         # Make a few obvious asserts
         if name == '' or type(name) not in [str,unicode]:

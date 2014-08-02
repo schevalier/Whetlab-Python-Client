@@ -8,17 +8,22 @@ except ImportError:
 
 setup(
 	name='whetlab',
-	version='',
-	description='whetlab-api API library client for python',
+	version='0.1',
+	description='Whetlab client for Python',
+        long_description=open('README.txt').read(),
 	author='Whetlab LLC',
 	author_email='info@whetlab.com',
 	url='http://www.whetlab.com/',
-	license='Harvard',
+	license='LICENSE.txt',
 	install_requires=[
 		'requests >= 2.1.0'
 	],
 	packages=[
-		'whetlab_api'
+		'whetlab',
+                'whetlab.server',
+                'whetlab.server.api',
+                'whetlab.server.error',
+                'whetlab.server.http_client'
 	],
 	classifiers=[
 		'Development Status :: 5 - Production/Stable',
