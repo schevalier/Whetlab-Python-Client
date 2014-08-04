@@ -20,12 +20,11 @@ class Experiments():
 	#
 	# name - The name of the experiment to be created.
 	# description - A detailed description of the experiment
-	# user - The user id of this user
-	def create(self, name, description, user, options = {}):
+	def create(self, name, description, settings, options = {}):
 		body = options['body'] if 'body' in options else {}
-		body['name'] = name
+		body['name']        = name
 		body['description'] = description
-		body['user'] = user
+                body['settings']    = settings
 
 		response = self.client.post('/alpha/experiments/', body, options)
 
