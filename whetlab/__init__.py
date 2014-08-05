@@ -27,11 +27,11 @@ INF_PAGE_SIZE = 1000000
 
 DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
 
-supported_properties = set(['min','max','size','scale','units','type','categories'])
+supported_properties = set(['min','max','size','scale','units','type','options'])
 required_properties = {
     'float':set(['min','max']),
     'integer':set(['min','max']),
-    'enum':set(['categories'])
+    'enum':set(['options'])
 }
 default_values = {
     'float':{
@@ -123,10 +123,10 @@ def _reformat_enum(rest_param):
     """
 
     type       = rest_param['type']
-    categories = rest_param['categories']
+    options    = rest_param['options']
     size       = rest_param['size']
 
-    return {'type':type,'categories':categories,'size':size}
+    return {'type':type,'options':options,'size':size}
 
 @catch_exception
 def _validate_integer(name, properties):
@@ -212,11 +212,11 @@ def _validate_enum(name, properties):
             properties[property] = default
 
     # Check compatibility of properties
-    if len(properties['categories']) < 3:
-        raise ValueError("Parameter '%s': must give at least 3 categories." % name)
+    if len(properties['options']) < 3:
+        raise ValueError("Parameter '%s': must give at least 3 options." % name)
 
-    if not all([isinstance(c,python_types['enum']) for c in properties['categories']]):
-        raise ValueError("Parameter '%s': categories must be of type %s." % name, python_types['enum'])
+    if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
+        raise ValueError("Parameter '%s': options must be of type %s." % name, python_types['enum'])
 
 reformat_from_rest = {'integer': _reformat_integer,
                       'float'  : _reformat_float,
