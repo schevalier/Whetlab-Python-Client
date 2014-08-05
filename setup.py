@@ -10,7 +10,7 @@ setup(
 	name='whetlab',
 	version='0.1',
 	description='Whetlab client for Python',
-        long_description=open('README.txt').read(),
+        long_description=open('README.md').read(),
 	author='Whetlab LLC',
 	author_email='info@whetlab.com',
 	url='http://www.whetlab.com/',
