@@ -12,11 +12,11 @@ INF_PAGE_SIZE = 1000000
 
 DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
 
-supported_properties = set(['min','max','size','scale','units','type','categories'])
+supported_properties = set(['min','max','size','scale','units','type','options'])
 required_properties = {
     'float':set(['min','max']),
     'integer':set(['min','max']),
-    'enum':set(['categories'])
+    'enum':set(['options'])
 }
 default_values = {
     'float':{
@@ -347,8 +347,8 @@ class Experiment:
     @catch_exception
     def _validate_enum(self, key, param):
         # Check if required properties are present
-        if 'categories' not in param:
-            raise ValueError("Parameter '%s': property 'categories' must be defined" % key)
+        if 'options' not in param:
+            raise ValueError("Parameter '%s': property 'options' must be defined" % key)
 
         # Add default parameters if not present
         for property, default in default_values['enum'].iteritems():
@@ -356,11 +356,11 @@ class Experiment:
                 param[property] = default
 
         # Check compatibility of properties
-        if len(param['categories']) < 3:
-            raise ValueError("Parameter '%s': must give at least 3 categories." % key)
+        if len(param['options']) < 3:
+            raise ValueError("Parameter '%s': must give at least 3 options." % key)
 
-        if not all([isinstance(c,python_types['enum']) for c in param['categories']]):
-            raise ValueError("Parameter '%s': categories must be of type %s." % key, python_types['enum'])
+        if not all([isinstance(c,python_types['enum']) for c in param['options']]):
+            raise ValueError("Parameter '%s': options must be of type %s." % key, python_types['enum'])
 
     def _find_experiment(self, name):
         """

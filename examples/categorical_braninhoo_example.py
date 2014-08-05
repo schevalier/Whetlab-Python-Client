@@ -4,7 +4,7 @@ import numpy as np
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1},
-               'Z' : {'type': 'enum', 'categories': ['1','2','3']}}
+               'Z' : {'type': 'enum', 'options': ['hello','goodbye','thirtyfour']}}
 #access_token = ''
 name = 'Categorical Braninhoo'
 description = 'Optimize the categorical braninhoo optimization benchmark'
