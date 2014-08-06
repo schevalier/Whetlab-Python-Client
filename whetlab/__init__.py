@@ -462,7 +462,7 @@ class Experiment:
         # Poll the server for the actual variable values in the suggestion.  
         variables = res.body['variables']
         while not variables:
-            time.sleep(2) # really?
+            time.sleep(2)
             result = self._client.result(str(result_id)).get()
             variables = result.body['variables']
 
