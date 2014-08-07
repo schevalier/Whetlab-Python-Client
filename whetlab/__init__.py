@@ -552,7 +552,7 @@ class Experiment:
         # Poll the server for the actual variable values in the suggestion.  
         variables = res.body['variables']
         while not variables:
-            time.sleep(2) # really?
+            time.sleep(2)
             result = self._client.result(str(result_id)).get()
             variables = result.body['variables']
 
@@ -649,7 +649,7 @@ class Experiment:
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
                         
-            res = self._client.results().add(variables, self._id, True, '', '')                    
+            res = self._client.results().add(variables, self.experiment_id, True, '', '')                    
             result_id = res.body['id']
 
             self._ids_to_param_values[result_id] = param_values
