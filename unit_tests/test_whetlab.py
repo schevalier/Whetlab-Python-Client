@@ -1,5 +1,5 @@
 from nose.tools import *
-import whetlab, whetlab_api
+import whetlab, whetlab.server
 from time import time, sleep
 
 default_access_token = None
@@ -62,7 +62,7 @@ def test_delete_experiment():
 
 class TestExperiment:
 
-    @raises(whetlab_api.error.client_error.ClientError)
+    @raises(whetlab.server.error.client_error.ClientError)
     def test_same_name(self):
         """ Can't create two experiments with same name (when resume is False). """
 
@@ -125,7 +125,7 @@ class TestExperiment:
                                        parameters=default_parameters,
                                        outcome=default_outcome)
 
-    @raises(whetlab_api.error.client_error.ClientError)
+    @raises(whetlab.server.error.client_error.ClientError)
     def test_name_too_long(self):
         """ Experiment's name must have at most 500 caracters. """
 
@@ -138,7 +138,7 @@ class TestExperiment:
 
 
 
-#    @raises(whetlab_api.error.client_error.ClientError)
+#    @raises(whetlab.server.error.client_error.ClientError)
 #    def test_description_too_long(self):
 #        """ Experiment's description must have at most 500 caracters. """
 #
@@ -236,7 +236,7 @@ class TestExperiment:
                                        parameters=bad_parameters,
                                        outcome=default_outcome)
 
-    @raises(whetlab_api.error.client_error.ClientError)
+    @raises(whetlab.server.error.client_error.ClientError)
     def test_access_token(self):
         """ Valid access token must be provided. """
 
