@@ -511,7 +511,6 @@ class Experiment:
         :param outcome_val: Value of the outcome.
         :type outcome_val: type defined for outcome
         """
-
         if outcome_val is not None:
             outcome_val = float(outcome_val)
 
