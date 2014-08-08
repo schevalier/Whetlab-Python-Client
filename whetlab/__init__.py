@@ -584,6 +584,7 @@ class Experiment:
         self._sync_with_server()
 
         id = None
+
         for k,v in self._ids_to_param_values.iteritems():
             if cmp(v,param_values) == 0:
                 id = k
@@ -624,7 +625,7 @@ class Experiment:
 
         if result_id is None:
             # If not, then this is a result that was not suggested,
-            # most add it to the server
+            # must add it to the server
 
             ## Get a time stamp for this submitted result
             #import datetime
@@ -648,8 +649,8 @@ class Experiment:
                     raise ValueError('Failed to update with non-suggested experiment')
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
-                        
-            res = self._client.results().add(variables, self.experiment_id, True, '', '')                    
+                
+            res = self._client.results().add(variables, self.experiment_id, True, self.experiment_description)
             result_id = res.body['id']
 
             self._ids_to_param_values[result_id] = param_values
@@ -677,7 +678,7 @@ class Experiment:
 
         # Check whether this param_values has a results ID
         id = self._get_id(param_values)
-        
+
         if id is not None:
             # Delete from internals
             del self._ids_to_param_values[id]
