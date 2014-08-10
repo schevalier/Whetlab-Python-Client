@@ -518,8 +518,11 @@ class Experiment:
         for param,value in param_values.iteritems():
             if param not in self.parameters:
                 raise ValueError("Parameter '" +param+ "' not valid")
-            if value < self.parameters[param]['min'] or value > self.parameters[param]['max']:
-                raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
+
+            if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
+                if value < self.parameters[param]['min'] or value > self.parameters[param]['max']:
+                    raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
+            
             if type(value) != python_types[self.parameters[param]['type']]:
                 raise TypeError("Parameter '" +param+ "' should be of type " + self.parameters[param]['type'])
 
