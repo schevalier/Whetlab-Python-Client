@@ -8,6 +8,21 @@ import time
 import functools
 import requests
 
+def catch_exception(f):
+    @functools.wraps(f)
+    def func(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError('Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.')
+        except server.error.ClientError as e:
+            if e.message == "Unable to understand the content type of response returned by request responsible for error":
+                raise RuntimeError('The server is currently busy, please try again shortly.')
+            else:
+                raise e
+    return func
+
+
 INF_PAGE_SIZE = 1000000
 
 DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
@@ -54,19 +69,163 @@ outcome_legal_values = {'size':set([1]),
             'scale':set(['linear']),
             'type':set(['float'])}
 
-def catch_exception(f):
-    @functools.wraps(f)
-    def func(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except requests.exceptions.ConnectionError:
-            raise RuntimeError('Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.')
-        except server.error.ClientError as e:
-            if e.message == "Unable to understand the content type of response returned by request responsible for error":
-                raise RuntimeError('The server is currently busy, please try again shortly.')
-            else:
-                raise e
-    return func
+@catch_exception
+def _reformat_float(rest_param):
+    """
+    Convert float parameter description in REST-server format to internal client format.
+
+    :param rest_param: Parameter description obtained from REST server.
+    :type rest_param: dict
+    :return: Parameter description in interal client format.
+    :rtype: dict
+    """
+
+    type  = rest_param['type']
+    min   = rest_param['min']
+    max   = rest_param['max']
+    size  = rest_param['size']
+    units = rest_param['units']
+    scale = rest_param['scale']
+
+    return {'type':type,'min':min,'max':max,
+            'size':size,'units':units,'scale':scale}
+
+@catch_exception
+def _reformat_integer(rest_param):
+    """
+    Convert integer parameter description in REST-server format to internal client format.
+
+    :param rest_param: Parameter description obtained from REST server.
+    :type rest_param: dict
+    :return: Parameter description in interal client format.
+    :rtype: dict
+    """
+
+    type  = rest_param['type']
+    min   = rest_param['min']
+    max   = rest_param['max']
+    size  = rest_param['size']
+    units = rest_param['units']
+    scale = rest_param['scale']
+
+    return {'type':type,'min':min,'max':max,
+            'size':size,'units':units,'scale':scale}
+
+@catch_exception
+def _reformat_enum(rest_param):
+    """
+    Convert enum parameter description in REST-server format to internal client format.
+
+    :param rest_param: Parameter description obtained from REST server.
+    :type rest_param: dict
+    :return: Parameter description in interal client format.
+    :rtype: dict
+    """
+
+    type       = rest_param['type']
+    options    = rest_param['options']
+    size       = rest_param['size']
+
+    return {'type':type,'options':options,'size':size}
+
+@catch_exception
+def _validate_integer(name, properties):
+    """
+    Validate that integer parameter description is valid.
+
+    :param name: Name of parameter
+    :type name: str
+    :param name: Properties of the parameter
+    :type name: dict
+    """
+
+    # Check if required properties are present
+    for property in required_properties['integer']:
+        if property not in properties:
+            raise ValueError("Parameter '" +name+ "': property '" + property + "' must be defined")
+
+    # Add default parameters if not present
+    for property, default in default_values['integer'].iteritems():
+        if property not in properties:
+            properties[property] = default
+
+    # Check compatibility of properties
+    if properties['min'] >= properties['max']:
+        raise ValueError("Parameter '" + name + "': 'min' should be smaller than 'max'")
+
+    if np.mod(properties['min'],1) != 0 : raise ValueError("Parameter '" + name + "': 'min' should be an integer")
+    if np.mod(properties['max'],1) != 0 : raise ValueError("Parameter '" + name + "': 'max' should be an integer")
+
+    for property, legals in legal_values.iteritems():
+        if properties[property] not in legals:
+            raise ValueError("Parameter '" +name+ "': invalid value for property '" + property+"'")
+
+@catch_exception
+def _validate_float(name, properties):
+    """
+    Validate that float parameter description is valid.
+
+    :param name: Name of parameter
+    :type name: str
+    :param name: Properties of the parameter
+    :type name: dict
+    """
+
+    # Check if required properties are present
+    for property in required_properties['float']:
+        if property not in properties:
+            raise ValueError("Parameter '" +name+ "': property '" + property + "' must be defined")
+
+    # Add default parameters if not present
+    for property, default in default_values['float'].iteritems():
+        if property not in properties:
+            properties[property] = default
+
+    # Check compatibility of properties
+    if properties['min'] >= properties['max']:
+        raise ValueError("Parameter '" + name + "': 'min' should be smaller than 'max'")
+
+    for property, legals in legal_values.iteritems():
+        if properties[property] not in legals:
+            raise ValueError("Parameter '" +name+ "': invalid value for property '" + property+"'")
+
+
+@catch_exception
+def _validate_enum(name, properties):
+    """
+    Validate that enum parameter description is valid.
+
+    :param name: Name of parameter
+    :type name: str
+    :param name: Properties of the parameter
+    :type name: dict
+    """
+
+    # Check if required properties are present
+    for property in required_properties['enum']:
+        if property not in properties:
+            raise ValueError("Parameter '" +name+ "': property '" + property + "' must be defined")
+
+    # Add default parameters if not present
+    for property, default in default_values['enum'].iteritems():
+        if property not in properties:
+            properties[property] = default
+
+    # Check compatibility of properties
+    if len(properties['options']) < 3:
+        raise ValueError("Parameter '%s': must give at least 3 options." % name)
+
+    if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
+        raise ValueError("Parameter '%s': options must be of type %s." % name, python_types['enum'])
+
+reformat_from_rest = {'integer': _reformat_integer,
+                      'float'  : _reformat_float,
+                      'enum'   : _reformat_enum}
+
+validate = {'integer': _validate_integer,
+            'float'  : _validate_float,
+            'enum'   : _validate_enum}
+
 
 @catch_exception
 def delete_experiment(access_token, name):
@@ -103,6 +262,7 @@ def load_config():
                 config_dict['api_url'] = config.get('whetlab', 'api_url')
             return config_dict
     return {}
+
 
 class Experiment:
     """
@@ -240,14 +400,11 @@ class Experiment:
 
                 ptype = param['type'] if param.has_key('type') else default_values['type']
 
-                if ptype == 'integer':
-                    self._validate_integer(key, param)
-                elif ptype == 'float':
-                    self._validate_float(key, param)
-                elif ptype == 'enum':
-                    self._validate_enum(key, param)
-                else:
+                if ptype not in validate:
                     raise ValueError("Parameter '%s' uses unsupported type '%s'." % (key, ptype))
+                
+                # Check whether description of parameter is valid
+                validate[ptype](key,param)
 
                 param['isOutput'] = False
                 param['name'] = key
@@ -300,68 +457,6 @@ class Experiment:
             # (e.g. fetching the setting ids)
             self._sync_with_server()
 
-    @catch_exception
-    def _validate_integer(self, key, param):
-        # Check if required properties are present
-        for property in required_properties['integer']:
-            if property not in param:
-                raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
-
-        # Add default parameters if not present
-        for property, default in default_values['integer'].iteritems():
-            if property not in param:
-                param[property] = default
-
-        # Check compatibility of properties
-        if param['min'] >= param['max']:
-            raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
-
-        if np.mod(param['min'],1) != 0 : raise ValueError("Parameter '" + key + "': 'min' should be an integer")
-        if np.mod(param['max'],1) != 0 : raise ValueError("Parameter '" + key + "': 'max' should be an integer")
-
-        for property, legals in legal_values.iteritems():
-            if param[property] not in legals:
-                raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
-
-    @catch_exception
-    def _validate_float(self, key, param):
-        # Check if required properties are present
-        for property in required_properties['float']:
-            if property not in param:
-                raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
-
-        # Add default parameters if not present
-        for property, default in default_values['float'].iteritems():
-            if property not in param:
-                param[property] = default
-
-        # Check compatibility of properties
-        if param['min'] >= param['max']:
-            raise ValueError("Parameter '" + key + "': 'min' should be smaller than 'max'")
-
-        for property, legals in legal_values.iteritems():
-            if param[property] not in legals:
-                raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
-
-
-    @catch_exception
-    def _validate_enum(self, key, param):
-        # Check if required properties are present
-        if 'options' not in param:
-            raise ValueError("Parameter '%s': property 'options' must be defined" % key)
-
-        # Add default parameters if not present
-        for property, default in default_values['enum'].iteritems():
-            if property not in param:
-                param[property] = default
-
-        # Check compatibility of properties
-        if len(param['options']) < 3:
-            raise ValueError("Parameter '%s': must give at least 3 options." % key)
-
-        if not all([isinstance(c,python_types['enum']) for c in param['options']]):
-            raise ValueError("Parameter '%s': options must be of type %s." % key, python_types['enum'])
-
     def _find_experiment(self, name):
         """
         Look for experiment matching name and return its ID.
@@ -409,24 +504,19 @@ class Experiment:
         rest_parameters = rest_parameters['results']
 
         self.parameters = {}
-        for param in rest_parameters:
-            id = param['id']
-            name = param['name']
-            type=param['type']
-            min=param['min']
-            max=param['max']
-            size=param['size']
-            units=param['units']
-            scale=param['scale']
-            isOutput=param['isOutput']
+        for rest_param in rest_parameters:
+            rest_param
+            id = rest_param['id']
+            name = rest_param['name']
+            type = rest_param['type']
+            isOutput = rest_param['isOutput']
 
             self._param_names_to_setting_ids[name] = id
 
             if isOutput:
                 self.outcome_name = name
             else:
-                self.parameters[name] = {'type':type,'min':min,'max':max,
-                             'size':size,'units':units,'scale':scale}
+                self.parameters[name] = reformat_from_rest[type](rest_param)
 
         # Get results generated so far for this experiment
         rest_results = self._client.results().get({'query': {'experiment':self.experiment_id,'page_size':INF_PAGE_SIZE}}).body['results']
@@ -494,6 +584,7 @@ class Experiment:
         self._sync_with_server()
 
         id = None
+
         for k,v in self._ids_to_param_values.iteritems():
             if cmp(v,param_values) == 0:
                 id = k
@@ -536,7 +627,7 @@ class Experiment:
 
         if result_id is None:
             # If not, then this is a result that was not suggested,
-            # most add it to the server
+            # must add it to the server
 
             ## Get a time stamp for this submitted result
             #import datetime
@@ -560,8 +651,8 @@ class Experiment:
                     raise ValueError('Failed to update with non-suggested experiment')
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
-                        
-            res = self._client.results().add(variables, self.experiment_id, True, '', '')                    
+                
+            res = self._client.results().add(variables, self.experiment_id, True, self.experiment_description)
             result_id = res.body['id']
 
             self._ids_to_param_values[result_id] = param_values
@@ -589,7 +680,7 @@ class Experiment:
 
         # Check whether this param_values has a results ID
         id = self._get_id(param_values)
-        
+
         if id is not None:
             # Delete from internals
             del self._ids_to_param_values[id]
