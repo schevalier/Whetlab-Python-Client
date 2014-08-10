@@ -4,7 +4,7 @@ import numpy as np
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1},
-               'Z' : {'type': 'enum', 'options': ['hello','goodbye','thirtyfour']}}
+               'Z' : {'type': 'enum', 'options': ['bad','Good!','OK']}}
 #access_token = ''
 name = 'Categorical Braninhoo'
 description = 'Optimize the categorical braninhoo optimization benchmark'
@@ -13,18 +13,21 @@ scientist = whetlab.Experiment(name=name, description=description, parameters=pa
 
 # Braninhoo function
 def categorical_braninhoo(X,Y,Z):
-    print Z
-    return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10;
+    if X > 10:
+        return np.nan
 
-for i in range(20):
+    Z = 1 if Z == 'Good!' else 2 if Z == 'OK' else 3
+    return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10*Z;
+
+for i in range(10000):
     # Get suggested new experiment
     job = scientist.suggest()
 
     # Perform experiment
     print job
     outcome = -categorical_braninhoo(**job)
+    print outcome
 
     # Inform scientist about the outcome
     scientist.update(job,outcome)
-    scientist.report()
 
