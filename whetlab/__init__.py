@@ -1,4 +1,5 @@
 import os
+import ast
 import tempfile
 import ConfigParser
 import collections
@@ -50,7 +51,7 @@ default_values = {
     'type':'float'
 }
 legal_values = {
-    'size':set([1]),
+    'size':set(range(25)),
     'scale':set(['linear','log']),
     'type':set(['float', 'integer', 'enum'])
 }
@@ -561,7 +562,15 @@ class Experiment:
         for var in variables:
             # Don't return the outcome variable
             if cmp(var['name'],self.outcome_name) != 0:
-                next[var['name']] = python_types[self.parameters[var['name']]['type']](var['value'])
+                if isinstance(var['value'], str):
+                    value = ast.literal_eval(var['value'])
+                else:
+                    value = var['value']
+
+                if isinstance(value, list) or isinstance(value, np.ndarray):
+                    next[var['name']] = [python_types[self.parameters[var['name']]['type']](v) for v in value]
+                else:
+                    next[var['name']] = python_types[self.parameters[var['name']]['type']](value)
             
         # Keep track of id / param_values relationship
         self._ids_to_param_values[result_id] = next
@@ -611,10 +620,17 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' not valid")
 
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
-                if value < self.parameters[param]['min'] or value > self.parameters[param]['max']:
+                if np.any(np.array(value) < self.parameters[param]['min']) or np.any(np.array(value) > self.parameters[param]['max']):
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
-            if type(value) != python_types[self.parameters[param]['type']]:
+            if isinstance(value, np.ndarray) or isinstance(value, list):
+                value_type = {type(np.asscalar(np.array(v))) for v in value}
+                if len(value_type) > 1:
+                    raise TypeError('All returned values for a variable should have the same type.')
+                value_type = value_type.pop()
+            else:
+                value_type = type(value)
+            if value_type != python_types[self.parameters[param]['type']]:
                 raise TypeError("Parameter '" +param+ "' should be of type " + self.parameters[param]['type'])
 
         # Check is all parameter values are specified
@@ -667,7 +683,6 @@ class Experiment:
                     break # Assume only one outcome per experiment!
             res = self._client.result(str(result_id)).update(**result)
             self._ids_to_outcome_values[result_id] = outcome_val
-        
 
     @catch_exception
     def cancel(self,param_values):

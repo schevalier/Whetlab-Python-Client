@@ -1,5 +1,6 @@
 import whetlab
 import numpy as np
+import time
 
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
@@ -12,6 +13,7 @@ scientist = whetlab.Experiment(name=name, description=description,
 
 # Braninhoo function
 def braninhoo(X,Y):
+    time.sleep(30)
     if X > 10:
         return np.nan
     return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10;
