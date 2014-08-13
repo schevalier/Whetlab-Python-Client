@@ -1,13 +1,17 @@
+# In this example we optimize the Braninhoo benchmark optimization problem but with an added constraint to make things
+# more interesting.
 import whetlab
 import numpy as np
 
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1}}
-name = 'Braninhoo 6'
+access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
+
+name = 'Braninhoo'
 description = 'Optimize the braninhoo optimization benchmark'
 outcome = {'name':'Negative Braninhoo output', 'type':'float'}
-scientist = whetlab.Experiment(name=name, description=description,
+scientist = whetlab.Experiment(name=name, access_token=access_token, description=description,
                                parameters=parameters, outcome=outcome)
 
 # Braninhoo function
