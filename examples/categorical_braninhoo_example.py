@@ -1,3 +1,5 @@
+# In this example we will optimize the 'Braninhoo' optimization benchmark with a small twist to 
+# demonstrate how to set up a categorical variable.  There is also a constraint on the function.
 import whetlab
 import numpy as np
 
