@@ -1,3 +1,4 @@
+# In this example we optimize the 2-D Hastie problem from sklearn with a support vector machine.
 import whetlab
 
 # Define parameters to optimize
@@ -5,8 +6,9 @@ parameters = {'C':{'type':'float', 'min':1.0, 'max':1000.0, 'size':1},
               'gamma':{'type':'float', 'min':0.0, 'max':1.0, 'size':1}}
 outcome = {'name':'Classification accuracy', 'type':'float'}
 name = 'sklearn SVM'
+access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 description = 'Training an SVM using the sklearn library'
-scientist = whetlab.Experiment(name=name, description=description,
+scientist = whetlab.Experiment(name=name, access_token=access_token, description=description,
                                parameters=parameters, outcome=outcome)
 
 # Setup scikit-learn experiment
