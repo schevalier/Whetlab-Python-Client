@@ -16,17 +16,14 @@ def braninhoo(X,Y):
         return np.nan
     return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10;
 
-for i in range(10000):
+for i in range(50):
     # Get suggested new experiment
     job = scientist.suggest()
 
     # Perform experiment
-    print job
     outcome = -braninhoo(**job)
-    print i, outcome
-
 
     # Inform scientist about the outcome
     scientist.update(job, outcome)
-    #scientist.report()
+    scientist.report()
 
