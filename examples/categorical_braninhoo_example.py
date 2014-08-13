@@ -7,11 +7,12 @@ import numpy as np
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1},
                'Z' : {'type': 'enum', 'options': ['bad','Good!','OK']}}
-#access_token = ''
+
+access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 name = 'Categorical Braninhoo'
 description = 'Optimize the categorical braninhoo optimization benchmark'
 outcome = {'name':'Negative Categorical Braninhoo output', 'type':'float'}
-scientist = whetlab.Experiment(name=name, description=description, parameters=parameters, outcome=outcome)
+scientist = whetlab.Experiment(name=name, access_token=access_token, description=description, parameters=parameters, outcome=outcome)
 
 # Braninhoo function
 def categorical_braninhoo(X,Y,Z):
