@@ -1,3 +1,8 @@
+# In this example we optimize a logistic regression on the popular MNIST digit recognition benchmark using the 'KAYAK'
+# deep learning code base.
+# To run this example, first get KAYAK from https://github.com/HIPS/Kayak. You can just run the command:
+# 'git clone https://github.com/HIPS/Kayak.git' from this directory.
+
 import sys
 sys.path.extend(['Kayak', '..', 'Kayak/examples'])
 
