@@ -156,7 +156,7 @@ the best hyper-paramters found so far as follows: ::
 
     best_job = scientist.best()
 
-This is the hyper-parameter values we should be using to train our
+These are the hyper-parameter values we should be using to train our
 final SVM classifier [#f3]_.
 
 Viewing experiments
