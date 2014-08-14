@@ -667,7 +667,7 @@ class Experiment:
                     raise ValueError('Failed to update with non-suggested experiment')
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
-                
+
             res = self._client.results().add(variables, self.experiment_id, True, self.experiment_description)
             result_id = res.body['id']
 
@@ -792,6 +792,7 @@ class Experiment:
         s = ids.argsort()
         ids = ids[s]
         outcome_values = outcomes_values[s]
+        outcome_values = np.array([float(i) for i in outcome_values])
         if outcome_values.size == 0 or np.all(np.isinf(outcome_values)):
             print 'There are no completed results to report'
             return
