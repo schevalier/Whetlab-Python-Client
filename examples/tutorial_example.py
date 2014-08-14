@@ -8,9 +8,15 @@ validation_set = (data_set['data'][1000:],data_set['target'][1000:])
 parameters = { 'C':{'min':0.01, 'max':1000.0,'type':'float'},
                'degree':{'min':1, 'max':5,'type':'integer'}}
 outcome = {'name':'Classification accuracy'}
+access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 
 import whetlab
-whetlab.delete_experiment(access_token, "Web page classifier")
+
+# First remove this experiment if it already exists.
+try:
+    whetlab.delete_experiment(access_token, "Web page classifier")
+except:
+    pass
 scientist = whetlab.Experiment(access_token=access_token,
                                name="Web page classifier",
                                description="Training a polynomial kernel SVM to classify web pages.",
