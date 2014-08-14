@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Library Documentation &mdash; Whetlab 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Whetlab 0.1 documentation" href="index.html" />
+    <link rel="prev" title="Tutorial: Sharpening your tools with Whetlab in Python" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial: Sharpening your tools with Whetlab in Python"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Whetlab 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-whetlab">
+<span id="library-documentation"></span><h1>Library Documentation<a class="headerlink" href="#module-whetlab" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="whetlab.Experiment">
+<em class="property">class </em><tt class="descclassname">whetlab.</tt><tt class="descname">Experiment</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Whetlab tuning experiment.</p>
+<p>A <tt class="docutils literal"><span class="pre">name</span></tt> and <tt class="docutils literal"><span class="pre">description</span></tt> for the experiment must be specified.
+A Whetlab access token must also be provided.
+The parameters to tune in the experiment are specified by
+<tt class="docutils literal"><span class="pre">parameters</span></tt>. It should be a <tt class="docutils literal"><span class="pre">dict</span></tt>, where keys are
+the parameters (<tt class="docutils literal"><span class="pre">str</span></tt>) and values are <tt class="docutils literal"><span class="pre">dict</span></tt> that
+provide information about these parameters. Each of these
+<tt class="docutils literal"><span class="pre">dict</span></tt> should contain the appropriate keys to properly describe
+the parameter:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">'min'</span></tt>: minimum value of the parameter</li>
+<li><tt class="docutils literal"><span class="pre">'max'</span></tt>: maximum value of the parameter</li>
+<li><tt class="docutils literal"><span class="pre">'scale'</span></tt>: scale to use when exploring parameter values (default: <tt class="docutils literal"><span class="pre">'linear'</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">'units'</span></tt>: units (<tt class="docutils literal"><span class="pre">str</span></tt>) in which the parameter is measured (default: <tt class="docutils literal"><span class="pre">''</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">'type'</span></tt>: type of the parameter (default: <tt class="docutils literal"><span class="pre">'float'</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">'size'</span></tt>: size of parameter (default: <tt class="docutils literal"><span class="pre">1</span></tt>)</li>
+</ul>
+<p><tt class="docutils literal"><span class="pre">outcome</span></tt> should also be a <tt class="docutils literal"><span class="pre">dict</span></tt>, describing the outcome. It
+should have the keys:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">'name'</span></tt>: name (<tt class="docutils literal"><span class="pre">str</span></tt>) for the outcome being optimized</li>
+<li><tt class="docutils literal"><span class="pre">'type'</span></tt>: type of the parameter, either <tt class="docutils literal"><span class="pre">'float'</span></tt>, <tt class="docutils literal"><span class="pre">'int'</span></tt> or  <tt class="docutils literal"><span class="pre">'enum'</span></tt> (default: <tt class="docutils literal"><span class="pre">'float'</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">'units'</span></tt>: units (<tt class="docutils literal"><span class="pre">str</span></tt>) in which the parameter is measured (default: <tt class="docutils literal"><span class="pre">''</span></tt>)</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">name</span></tt> and <tt class="docutils literal"><span class="pre">description</span></tt> match a previously created experiment,
+that experiment will be resumed (in this case, <tt class="docutils literal"><span class="pre">parameters</span></tt> and <tt class="docutils literal"><span class="pre">outcoume</span></tt> are ignored).
+This behavior can be avoided by setting the argument <tt class="docutils literal"><span class="pre">resume</span></tt>
+to <tt class="docutils literal"><span class="pre">False</span></tt> (in which case an error will be raised is an experiment
+with the same name and description is found).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>access_token</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Access token for your Whetlab account.</li>
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of the experiment.</li>
+<li><strong>description</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Description of the experiment.</li>
+<li><strong>parameters</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Parameters to be tuned during the experiment.</li>
+<li><strong>outcome</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Description of the outcome to maximize.</li>
+<li><strong>resume</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to allow the resuming of a previously executed experiment.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>A Whetlab experiment instance will have the following variables:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parameters</strong> &#8211; Parameters to be tuned during the experiment.</li>
+<li><strong>outcome</strong> &#8211; Description of the outcome to maximize.</li>
+<li><strong>experiment_id</strong> &#8211; ID of the experiment (useful for resuming).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="whetlab.Experiment.best">
+<tt class="descname">best</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.best"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.best" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return job with best outcome found so far.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Parameter values with best outcome.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.cancel">
+<tt class="descname">cancel</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel a job, by removing it from the jobs recorded so far in the experiment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>param_values</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Values of the parameters for the job to cancel.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.clear_pending">
+<tt class="descname">clear_pending</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.clear_pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.clear_pending" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel jobs (results) that are marked as pending.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.pending">
+<tt class="descname">pending</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.pending" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of jobs which have been suggested, but for which no 
+result has been provided yet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of parameter values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.report">
+<tt class="descname">report</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a visual report of the progress made so far in the experiment.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.suggest">
+<tt class="descname">suggest</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.suggest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.suggest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suggest a new job.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Values to assign to the parameters in the suggested job.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="whetlab.Experiment.update">
+<tt class="descname">update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#Experiment.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.Experiment.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the experiment with the outcome value associated with some parameter values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>param_values</strong> (<a class="reference external" href="http://docs.python.org/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; Values of parameters.</li>
+<li><strong>outcome_val</strong> (<em>type defined for outcome</em>) &#8211; Value of the outcome.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="whetlab.delete_experiment">
+<tt class="descclassname">whetlab.</tt><tt class="descname">delete_experiment</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/whetlab.html#delete_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#whetlab.delete_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the experiment with the given name.</p>
+<p>Important, this cancels the experiment and removes all saved results!</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>access_token</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; User access token</li>
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Experiment name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/whetlab-logo-small.png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Tutorial: Sharpening your tools with Whetlab in Python</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/library.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial: Sharpening your tools with Whetlab in Python"
+             >previous</a> |</li>
+        <li><a href="index.html">Whetlab 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Whetlab inc..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>
