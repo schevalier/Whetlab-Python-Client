@@ -788,7 +788,7 @@ class Experiment:
         best_so_far = [ np.max(y[:(i+1)]) for i in range(len(y)) ]
         plt.scatter(range(len(y)),y,marker='x',color='k',label='Outcomes')
         plt.plot(range(len(y)),best_so_far,color='k',label='Best so far')
-        plt.xlabel('Experiment ID')
+        plt.xlabel('Result ID')
         plt.ylabel(self.outcome_name)
         plt.title('Outcome values progression')
         plt.legend(loc=3)
@@ -799,17 +799,19 @@ class Experiment:
         # Plot table of experiments
         plt.figure(2)
         param_names = list(np.sort(self.parameters.keys()))
-        col_names = param_names + [self.outcome_name]
+        col_names = ['Result #'] + param_names + [self.outcome_name]
         cell_text = []
-        for id in ids:
+        for nb,id in enumerate(ids):
             # Get paramater values, put in correct order and add to
             # table with corresponding outcome value
             params, values = zip(*self._ids_to_param_values[id].iteritems())
             s = np.argsort(params)
             values = np.array(values)[s]
             outcome = self._ids_to_outcome_values[id]
-            cell_text.append([str(v) for v in values] + [str(outcome)])
+            cell_text.append([str(nb+1)] + [str(v) for v in values] + [str(outcome)])
 
+        if len(cell_text) > 20:
+            cell_text = cell_text[-20:]
         the_table = plt.table(cellText = cell_text, colLabels=col_names, loc='center')
 
         ## change cell properties
