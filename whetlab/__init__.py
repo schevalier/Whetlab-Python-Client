@@ -457,6 +457,10 @@ class Experiment:
             # (e.g. fetching the setting ids)
             self._sync_with_server()
 
+        pending = self.pending()
+        if len(pending) > 0:
+            print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
+
     def _find_experiment(self, name):
         """
         Look for experiment matching name and return its ID.
