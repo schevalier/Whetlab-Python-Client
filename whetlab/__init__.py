@@ -826,19 +826,5 @@ class Experiment:
         plt.ion()
         plt.show()
 
-        ## Plot the sensitivity to each dimension of the input        
-        #sensitivity = self.chooser.get_sensitivity()
-        #if sensitivity.shape[0] > 1:
-        #   plt.figure(3)
-        #   plt.clf()
-        #   plt.bar(np.arange(sensitivity.shape[0]), sensitivity)
-        #   ax = plt.gca()
-        #   labels = []
-        #   ax.set_xticks(np.arange(sensitivity.shape[0]))
-        #   ax.set_xticklabels(param_names)
-        #   plt.title('Relative sensitivity of experiment variables')
-        #   plt.draw()
-        #   plt.ion()
-        #   plt.show()
 
 
