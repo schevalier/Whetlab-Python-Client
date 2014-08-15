@@ -74,7 +74,7 @@ the parameter:</p>
 should have the keys:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">'name'</span></tt>: name (<tt class="docutils literal"><span class="pre">str</span></tt>) for the outcome being optimized</li>
-<li><tt class="docutils literal"><span class="pre">'type'</span></tt>: type of the parameter (default: <tt class="docutils literal"><span class="pre">'float'</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">'type'</span></tt>: type of the parameter, either <tt class="docutils literal"><span class="pre">'float'</span></tt>, <tt class="docutils literal"><span class="pre">'int'</span></tt> or  <tt class="docutils literal"><span class="pre">'enum'</span></tt> (default: <tt class="docutils literal"><span class="pre">'float'</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">'units'</span></tt>: units (<tt class="docutils literal"><span class="pre">str</span></tt>) in which the parameter is measured (default: <tt class="docutils literal"><span class="pre">''</span></tt>)</li>
 </ul>
 <p>If <tt class="docutils literal"><span class="pre">name</span></tt> and <tt class="docutils literal"><span class="pre">description</span></tt> match a previously created experiment,
@@ -107,7 +107,6 @@ with the same name and description is found).</p>
 <li><strong>parameters</strong> &#8211; Parameters to be tuned during the experiment.</li>
 <li><strong>outcome</strong> &#8211; Description of the outcome to maximize.</li>
 <li><strong>experiment_id</strong> &#8211; ID of the experiment (useful for resuming).</li>
-<li><strong>task_id</strong> &#8211; ID of the task (useful for resuming).</li>
 </ul>
 </td>
 </tr>

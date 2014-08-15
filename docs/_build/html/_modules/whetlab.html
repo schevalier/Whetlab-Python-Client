@@ -52,26 +52,59 @@
 <span class="kn">import</span> <span class="nn">ConfigParser</span>
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">whetlab_api</span>
+<span class="kn">import</span> <span class="nn">server</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">requests</span>
 
+<span class="k">def</span> <span class="nf">catch_exception</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">server</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span> <span class="o">==</span> <span class="s">&quot;Unable to understand the content type of response returned by request responsible for error&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;The server is currently busy, please try again shortly.&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+    <span class="k">return</span> <span class="n">func</span>
+
+
 <span class="n">INF_PAGE_SIZE</span> <span class="o">=</span> <span class="mi">1000000</span>
 
-<span class="n">DEFAULT_API_URL</span> <span class="o">=</span> <span class="s">&#39;http://api.whetlab.com&#39;</span>
+<span class="n">DEFAULT_API_URL</span> <span class="o">=</span> <span class="s">&#39;http://whetlab-server.elasticbeanstalk.com&#39;</span>
 
-<span class="n">supported_properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">,</span><span class="s">&#39;scale&#39;</span><span class="p">,</span><span class="s">&#39;units&#39;</span><span class="p">,</span><span class="s">&#39;type&#39;</span><span class="p">])</span>
-<span class="n">required_properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">])</span>
-<span class="n">default_values</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
-          <span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="s">&#39;linear&#39;</span><span class="p">,</span>
-          <span class="s">&#39;units&#39;</span><span class="p">:</span><span class="s">&#39;Reals&#39;</span><span class="p">,</span>
-          <span class="s">&#39;type&#39;</span><span class="p">:</span><span class="s">&#39;float&#39;</span><span class="p">}</span>
-<span class="n">legal_values</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;linear&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">]),</span>
-        <span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;float&#39;</span><span class="p">,</span> <span class="s">&#39;integer&#39;</span><span class="p">])}</span>
+<span class="n">supported_properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">,</span><span class="s">&#39;scale&#39;</span><span class="p">,</span><span class="s">&#39;units&#39;</span><span class="p">,</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;options&#39;</span><span class="p">])</span>
+<span class="n">required_properties</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;float&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">]),</span>
+    <span class="s">&#39;integer&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">]),</span>
+    <span class="s">&#39;enum&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;options&#39;</span><span class="p">])</span>
+<span class="p">}</span>
+<span class="n">default_values</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;float&#39;</span><span class="p">:{</span>
+        <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="s">&#39;linear&#39;</span><span class="p">,</span>
+        <span class="s">&#39;units&#39;</span><span class="p">:</span><span class="s">&#39;Reals&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s">&#39;integer&#39;</span><span class="p">:{</span>
+        <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="s">&#39;linear&#39;</span><span class="p">,</span>
+        <span class="s">&#39;units&#39;</span><span class="p">:</span><span class="s">&#39;Integers&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s">&#39;enum&#39;</span><span class="p">:{</span>
+        <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="mi">1</span>
+    <span class="p">},</span>
+    <span class="s">&#39;type&#39;</span><span class="p">:</span><span class="s">&#39;float&#39;</span>
+<span class="p">}</span>
+<span class="n">legal_values</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;linear&#39;</span><span class="p">,</span><span class="s">&#39;log&#39;</span><span class="p">]),</span>
+    <span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;float&#39;</span><span class="p">,</span> <span class="s">&#39;integer&#39;</span><span class="p">,</span> <span class="s">&#39;enum&#39;</span><span class="p">])</span>
+<span class="p">}</span>
 
-<span class="n">python_types</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;float&#39;</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span><span class="s">&#39;integer&#39;</span><span class="p">:</span><span class="nb">int</span><span class="p">}</span>
+<span class="n">python_types</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;float&#39;</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span><span class="s">&#39;integer&#39;</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span><span class="s">&#39;enum&#39;</span><span class="p">:</span><span class="nb">str</span><span class="p">}</span>
 
 <span class="n">outcome_supported_properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;units&#39;</span><span class="p">,</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
 <span class="n">outcome_required_properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
@@ -85,14 +118,163 @@
             <span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;linear&#39;</span><span class="p">]),</span>
             <span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">set</span><span class="p">([</span><span class="s">&#39;float&#39;</span><span class="p">])}</span>
 
-<span class="k">def</span> <span class="nf">catch_exception</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
-    <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Unable to reach the server. Either the server is experiencing difficulties or your internet connection is down.&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">func</span>
+<span class="nd">@catch_exception</span>
+<span class="k">def</span> <span class="nf">_reformat_float</span><span class="p">(</span><span class="n">rest_param</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert float parameter description in REST-server format to internal client format.</span>
+
+<span class="sd">    :param rest_param: Parameter description obtained from REST server.</span>
+<span class="sd">    :type rest_param: dict</span>
+<span class="sd">    :return: Parameter description in interal client format.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">type</span>  <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+    <span class="nb">min</span>   <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span>
+    <span class="nb">max</span>   <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]</span>
+    <span class="n">size</span>  <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;units&#39;</span><span class="p">]</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;scale&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">type</span><span class="p">,</span><span class="s">&#39;min&#39;</span><span class="p">:</span><span class="nb">min</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">:</span><span class="nb">max</span><span class="p">,</span>
+            <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">size</span><span class="p">,</span><span class="s">&#39;units&#39;</span><span class="p">:</span><span class="n">units</span><span class="p">,</span><span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="n">scale</span><span class="p">}</span>
+
+<span class="nd">@catch_exception</span>
+<span class="k">def</span> <span class="nf">_reformat_integer</span><span class="p">(</span><span class="n">rest_param</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert integer parameter description in REST-server format to internal client format.</span>
+
+<span class="sd">    :param rest_param: Parameter description obtained from REST server.</span>
+<span class="sd">    :type rest_param: dict</span>
+<span class="sd">    :return: Parameter description in interal client format.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">type</span>  <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+    <span class="nb">min</span>   <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span>
+    <span class="nb">max</span>   <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]</span>
+    <span class="n">size</span>  <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;units&#39;</span><span class="p">]</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;scale&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">type</span><span class="p">,</span><span class="s">&#39;min&#39;</span><span class="p">:</span><span class="nb">min</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">:</span><span class="nb">max</span><span class="p">,</span>
+            <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">size</span><span class="p">,</span><span class="s">&#39;units&#39;</span><span class="p">:</span><span class="n">units</span><span class="p">,</span><span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="n">scale</span><span class="p">}</span>
+
+<span class="nd">@catch_exception</span>
+<span class="k">def</span> <span class="nf">_reformat_enum</span><span class="p">(</span><span class="n">rest_param</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert enum parameter description in REST-server format to internal client format.</span>
+
+<span class="sd">    :param rest_param: Parameter description obtained from REST server.</span>
+<span class="sd">    :type rest_param: dict</span>
+<span class="sd">    :return: Parameter description in interal client format.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">type</span>       <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+    <span class="n">options</span>    <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;options&#39;</span><span class="p">]</span>
+    <span class="n">size</span>       <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">type</span><span class="p">,</span><span class="s">&#39;options&#39;</span><span class="p">:</span><span class="n">options</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">size</span><span class="p">}</span>
+
+<span class="nd">@catch_exception</span>
+<span class="k">def</span> <span class="nf">_validate_integer</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate that integer parameter description is valid.</span>
+
+<span class="sd">    :param name: Name of parameter</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param name: Properties of the parameter</span>
+<span class="sd">    :type name: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Check if required properties are present</span>
+    <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">required_properties</span><span class="p">[</span><span class="s">&#39;integer&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">name</span><span class="o">+</span> <span class="s">&quot;&#39;: property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span> <span class="o">+</span> <span class="s">&quot;&#39; must be defined&quot;</span><span class="p">)</span>
+
+    <span class="c"># Add default parameters if not present</span>
+    <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">default_values</span><span class="p">[</span><span class="s">&#39;integer&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+
+    <span class="c"># Check compatibility of properties</span>
+    <span class="k">if</span> <span class="n">properties</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">properties</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39;: &#39;min&#39; should be smaller than &#39;max&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39;: &#39;min&#39; should be an integer&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39;: &#39;max&#39; should be an integer&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">legals</span> <span class="ow">in</span> <span class="n">legal_values</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">properties</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">legals</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">name</span><span class="o">+</span> <span class="s">&quot;&#39;: invalid value for property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span><span class="o">+</span><span class="s">&quot;&#39;&quot;</span><span class="p">)</span>
+
+<span class="nd">@catch_exception</span>
+<span class="k">def</span> <span class="nf">_validate_float</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate that float parameter description is valid.</span>
+
+<span class="sd">    :param name: Name of parameter</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param name: Properties of the parameter</span>
+<span class="sd">    :type name: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Check if required properties are present</span>
+    <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">required_properties</span><span class="p">[</span><span class="s">&#39;float&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">name</span><span class="o">+</span> <span class="s">&quot;&#39;: property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span> <span class="o">+</span> <span class="s">&quot;&#39; must be defined&quot;</span><span class="p">)</span>
+
+    <span class="c"># Add default parameters if not present</span>
+    <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">default_values</span><span class="p">[</span><span class="s">&#39;float&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+
+    <span class="c"># Check compatibility of properties</span>
+    <span class="k">if</span> <span class="n">properties</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">properties</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39;: &#39;min&#39; should be smaller than &#39;max&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">legals</span> <span class="ow">in</span> <span class="n">legal_values</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">properties</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">legals</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">name</span><span class="o">+</span> <span class="s">&quot;&#39;: invalid value for property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span><span class="o">+</span><span class="s">&quot;&#39;&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@catch_exception</span>
+<span class="k">def</span> <span class="nf">_validate_enum</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate that enum parameter description is valid.</span>
+
+<span class="sd">    :param name: Name of parameter</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param name: Properties of the parameter</span>
+<span class="sd">    :type name: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Check if required properties are present</span>
+    <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">required_properties</span><span class="p">[</span><span class="s">&#39;enum&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">name</span><span class="o">+</span> <span class="s">&quot;&#39;: property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span> <span class="o">+</span> <span class="s">&quot;&#39; must be defined&quot;</span><span class="p">)</span>
+
+    <span class="c"># Add default parameters if not present</span>
+    <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">default_values</span><span class="p">[</span><span class="s">&#39;enum&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+
+    <span class="c"># Check compatibility of properties</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s">&#39;options&#39;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;</span><span class="si">%s</span><span class="s">&#39;: must give at least 3 options.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">python_types</span><span class="p">[</span><span class="s">&#39;enum&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">[</span><span class="s">&#39;options&#39;</span><span class="p">]]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;</span><span class="si">%s</span><span class="s">&#39;: options must be of type </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">,</span> <span class="n">python_types</span><span class="p">[</span><span class="s">&#39;enum&#39;</span><span class="p">])</span>
+
+<span class="n">reformat_from_rest</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;integer&#39;</span><span class="p">:</span> <span class="n">_reformat_integer</span><span class="p">,</span>
+                      <span class="s">&#39;float&#39;</span>  <span class="p">:</span> <span class="n">_reformat_float</span><span class="p">,</span>
+                      <span class="s">&#39;enum&#39;</span>   <span class="p">:</span> <span class="n">_reformat_enum</span><span class="p">}</span>
+
+<span class="n">validate</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;integer&#39;</span><span class="p">:</span> <span class="n">_validate_integer</span><span class="p">,</span>
+            <span class="s">&#39;float&#39;</span>  <span class="p">:</span> <span class="n">_validate_float</span><span class="p">,</span>
+            <span class="s">&#39;enum&#39;</span>   <span class="p">:</span> <span class="n">_validate_enum</span><span class="p">}</span>
+
 
 <span class="nd">@catch_exception</span>
 <div class="viewcode-block" id="delete_experiment"><a class="viewcode-back" href="../library.html#whetlab.delete_experiment">[docs]</a><span class="k">def</span> <span class="nf">delete_experiment</span><span class="p">(</span><span class="n">access_token</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -130,6 +312,7 @@
             <span class="k">return</span> <span class="n">config_dict</span>
     <span class="k">return</span> <span class="p">{}</span>
 
+
 <div class="viewcode-block" id="Experiment"><a class="viewcode-back" href="../library.html#whetlab.Experiment">[docs]</a><span class="k">class</span> <span class="nc">Experiment</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A Whetlab tuning experiment.</span>
@@ -154,7 +337,7 @@
 <span class="sd">    should have the keys:</span>
 
 <span class="sd">    * ``&#39;name&#39;``: name (``str``) for the outcome being optimized</span>
-<span class="sd">    * ``&#39;type&#39;``: type of the parameter (default: ``&#39;float&#39;``)</span>
+<span class="sd">    * ``&#39;type&#39;``: type of the parameter, either ``&#39;float&#39;``, ``&#39;int&#39;`` or  ``&#39;enum&#39;`` (default: ``&#39;float&#39;``)</span>
 <span class="sd">    * ``&#39;units&#39;``: units (``str``) in which the parameter is measured (default: ``&#39;&#39;``)</span>
 
 <span class="sd">    If ``name`` and ``description`` match a previously created experiment,</span>
@@ -184,8 +367,6 @@
 <span class="sd">    :type outcome: dict</span>
 <span class="sd">    :ivar experiment_id: ID of the experiment (useful for resuming).</span>
 <span class="sd">    :type experiment_id: int</span>
-<span class="sd">    :ivar task_id: ID of the task (useful for resuming).</span>
-<span class="sd">    :type task: id</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@catch_exception</span>
@@ -225,7 +406,7 @@
                     <span class="s">&#39;api_version&#39;</span><span class="p">:</span><span class="s">&#39;api&#39;</span><span class="p">,</span>
                     <span class="s">&#39;base&#39;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="n">whetlab_api</span><span class="o">.</span><span class="n">Client</span><span class="p">({},</span><span class="n">options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">Client</span><span class="p">({},</span><span class="n">options</span><span class="p">)</span>
 
         <span class="c"># Make a few obvious asserts</span>
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;&#39;</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">unicode</span><span class="p">]:</span>
@@ -234,15 +415,10 @@
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>  <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">unicode</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Description of experiment must be a string&#39;</span><span class="p">)</span>
 
-        <span class="c"># For now, we support one task per experiment, and the name and description of the task</span>
-        <span class="c"># is the same as the experiment&#39;s</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">experiment_description</span> <span class="o">=</span> <span class="n">description</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">task_description</span> <span class="o">=</span> <span class="n">description</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_experiment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">resume</span><span class="p">:</span>
             <span class="c"># Sync all the internals with the REST server</span>
@@ -260,32 +436,24 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Argument outcome should have key </span><span class="se">\&#39;</span><span class="s">name</span><span class="se">\&#39;</span><span class="s">&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span> <span class="o">=</span> <span class="n">outcome</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
             
-            <span class="c"># Add specification of parameters to task</span>
+            <span class="c"># Add specification of parameters to experiment.</span>
             <span class="n">settings</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="c">#settings = {}</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">param</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="n">param</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
-                <span class="c"># Check if all properties are supported</span>
-                <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="s">&#39;enum&#39;</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Enum types are not supported yet.  Please use integers instead.&quot;</span><span class="p">)</span>
-
                 <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_properties</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">key</span><span class="o">+</span> <span class="s">&quot;&#39;: property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span> <span class="o">+</span> <span class="s">&quot;&#39; not supported&quot;</span><span class="p">)</span>
-                
-                <span class="c"># Check if required properties are present</span>
-                <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">required_properties</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">key</span><span class="o">+</span> <span class="s">&quot;&#39;: property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span> <span class="o">+</span> <span class="s">&quot;&#39; must be defined&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_properties</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">key</span><span class="o">+</span> <span class="s">&quot;&#39;: property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span> <span class="o">+</span> <span class="s">&quot;&#39; not supported&quot;</span><span class="p">)</span>
 
-                <span class="c"># Add default parameters if not present</span>
-                <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">default_values</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param</span><span class="p">:</span> <span class="n">param</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+                <span class="n">ptype</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">default_values</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">ptype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">validate</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;</span><span class="si">%s</span><span class="s">&#39; uses unsupported type &#39;</span><span class="si">%s</span><span class="s">&#39;.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ptype</span><span class="p">))</span>
                 
-                <span class="c"># Check compatibility of properties</span>
-                <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">param</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;&#39;: &#39;min&#39; should be smaller than &#39;max&#39;&quot;</span><span class="p">)</span>
-                <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">legals</span> <span class="ow">in</span> <span class="n">legal_values</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">legals</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">key</span><span class="o">+</span> <span class="s">&quot;&#39;: invalid value for property &#39;&quot;</span> <span class="o">+</span> <span class="nb">property</span><span class="o">+</span><span class="s">&quot;&#39;&quot;</span><span class="p">)</span>
+                <span class="c"># Check whether description of parameter is valid</span>
+                <span class="n">validate</span><span class="p">[</span><span class="n">ptype</span><span class="p">](</span><span class="n">key</span><span class="p">,</span><span class="n">param</span><span class="p">)</span>
 
                 <span class="n">param</span><span class="p">[</span><span class="s">&#39;isOutput&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
                 <span class="n">param</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
@@ -320,18 +488,17 @@
             <span class="n">settings</span> <span class="o">+=</span> <span class="p">[</span><span class="n">param</span><span class="p">]</span>
             <span class="c">#settings[outcome[&#39;name&#39;]] = param</span>
 
-            <span class="c"># Create experiment and task</span>
+            <span class="c"># Create experiment.</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">tasks</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">,</span><span class="n">description</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task_description</span><span class="p">,</span><span class="n">settings</span><span class="o">=</span><span class="n">settings</span><span class="p">)</span>
-                <span class="n">experiment_id</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;experiment&#39;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span> <span class="o">=</span> <span class="n">experiment_id</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">experiments</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">,</span> 
+                                                        <span class="n">description</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_description</span><span class="p">,</span>
+                                                        <span class="n">settings</span><span class="o">=</span><span class="n">settings</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">inst</span><span class="p">:</span>
                 <span class="c"># If experiment creation doesn&#39;t work, then retry resuming the experiment.</span>
                 <span class="c"># This is for cases where two processes are starting an experiment, and</span>
                 <span class="c"># one gets to create it first while the other should be resuming it.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_experiment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span> <span class="o">=</span> <span class="bp">None</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">resume</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span> <span class="ow">is</span> <span class="bp">None</span> <span class="p">:</span>
                     <span class="k">raise</span> <span class="n">inst</span>
 
@@ -339,7 +506,6 @@
             <span class="c"># (e.g. fetching the setting ids)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sync_with_server</span><span class="p">()</span>
 
-    <span class="nd">@catch_exception</span>
     <span class="k">def</span> <span class="nf">_find_experiment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Look for experiment matching name and return its ID.</span>
@@ -367,39 +533,6 @@
                     <span class="k">return</span> <span class="n">exp</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">None</span>
 
-    <span class="nd">@catch_exception</span>            
-    <span class="k">def</span> <span class="nf">_find_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiment_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        For a given experiment (specified by its ID), look for a task </span>
-<span class="sd">        matching a given name and return its ID.</span>
-
-<span class="sd">        :param experiment_id: Experiment&#39;s ID</span>
-<span class="sd">        :type experiment_id: int</span>
-<span class="sd">        :param name: Task&#39;s name</span>
-<span class="sd">        :type name: str</span>
-<span class="sd">        :return: Task&#39;s ID.</span>
-<span class="sd">        :rtype: int</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c"># Look one page at a time</span>
-        <span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">more_pages</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="k">while</span> <span class="n">more_pages</span><span class="p">:</span>
-            <span class="n">rest_tasks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">tasks</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">({</span><span class="s">&#39;query&#39;</span><span class="p">:{</span><span class="s">&#39;page&#39;</span><span class="p">:</span><span class="n">page</span><span class="p">}})</span><span class="o">.</span><span class="n">body</span>
-
-            <span class="c"># Check if more pages to come</span>
-            <span class="n">more_pages</span> <span class="o">=</span> <span class="n">rest_tasks</span><span class="p">[</span><span class="s">&#39;next&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
-            <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
-
-            <span class="c"># Find in current page whether we find the task we are looking for</span>
-            <span class="n">rest_tasks</span> <span class="o">=</span> <span class="n">rest_tasks</span><span class="p">[</span><span class="s">&#39;results&#39;</span><span class="p">]</span>
-            <span class="n">found</span> <span class="o">=</span> <span class="bp">False</span>
-            <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">rest_tasks</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">task</span><span class="p">[</span><span class="s">&#39;experiment&#39;</span><span class="p">],</span><span class="n">experiment_id</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>\
-                        <span class="ow">and</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">task</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span><span class="n">task_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">task</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">None</span>
-
     <span class="nd">@catch_exception</span>
     <span class="k">def</span> <span class="nf">_sync_with_server</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -410,47 +543,32 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">experiment_description</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;description&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Task with name </span><span class="se">\&#39;</span><span class="s">&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\&#39;</span><span class="s"> not found&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">tasks</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">({</span><span class="s">&#39;query&#39;</span><span class="p">:{</span><span class="s">&#39;id&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">task_id</span><span class="p">}})</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;results&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">task_description</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;description&#39;</span><span class="p">]</span>
-            
-
         <span class="c"># Reset internals</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ids_to_param_values</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ids_to_outcome_values</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_param_names_to_setting_ids</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="c"># Get settings for this task, to get the parameter and outcome names</span>
+        <span class="c"># Get settings for this experiment, to get the parameter and outcome names</span>
         <span class="n">rest_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">settings</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span><span class="p">),{</span><span class="s">&#39;query&#39;</span><span class="p">:{</span><span class="s">&#39;page_size&#39;</span><span class="p">:</span><span class="n">INF_PAGE_SIZE</span><span class="p">}})</span><span class="o">.</span><span class="n">body</span>
         <span class="n">rest_parameters</span> <span class="o">=</span> <span class="n">rest_parameters</span><span class="p">[</span><span class="s">&#39;results&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">rest_parameters</span><span class="p">:</span>
-            <span class="nb">id</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
-            <span class="nb">type</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
-            <span class="nb">min</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;min&#39;</span><span class="p">]</span>
-            <span class="nb">max</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;max&#39;</span><span class="p">]</span>
-            <span class="n">size</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span>
-            <span class="n">units</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;units&#39;</span><span class="p">]</span>
-            <span class="n">scale</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;scale&#39;</span><span class="p">]</span>
-            <span class="n">isOutput</span><span class="o">=</span><span class="n">param</span><span class="p">[</span><span class="s">&#39;isOutput&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">rest_param</span> <span class="ow">in</span> <span class="n">rest_parameters</span><span class="p">:</span>
+            <span class="n">rest_param</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+            <span class="nb">type</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+            <span class="n">isOutput</span> <span class="o">=</span> <span class="n">rest_param</span><span class="p">[</span><span class="s">&#39;isOutput&#39;</span><span class="p">]</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_param_names_to_setting_ids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">id</span>
 
             <span class="k">if</span> <span class="n">isOutput</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span> <span class="o">=</span> <span class="n">name</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="nb">type</span><span class="p">,</span><span class="s">&#39;min&#39;</span><span class="p">:</span><span class="nb">min</span><span class="p">,</span><span class="s">&#39;max&#39;</span><span class="p">:</span><span class="nb">max</span><span class="p">,</span>
-                             <span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">size</span><span class="p">,</span><span class="s">&#39;units&#39;</span><span class="p">:</span><span class="n">units</span><span class="p">,</span><span class="s">&#39;scale&#39;</span><span class="p">:</span><span class="n">scale</span><span class="p">}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">reformat_from_rest</span><span class="p">[</span><span class="nb">type</span><span class="p">](</span><span class="n">rest_param</span><span class="p">)</span>
 
-        <span class="c"># Get results generated so far for this task</span>
-        <span class="n">rest_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">results</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">({</span><span class="s">&#39;query&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;task&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">task_id</span><span class="p">,</span><span class="s">&#39;page_size&#39;</span><span class="p">:</span><span class="n">INF_PAGE_SIZE</span><span class="p">}})</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;results&#39;</span><span class="p">]</span>
+        <span class="c"># Get results generated so far for this experiment</span>
+        <span class="n">rest_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">results</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">({</span><span class="s">&#39;query&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;experiment&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span><span class="p">,</span><span class="s">&#39;page_size&#39;</span><span class="p">:</span><span class="n">INF_PAGE_SIZE</span><span class="p">}})</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;results&#39;</span><span class="p">]</span>
         <span class="c"># Construct things needed by client internally, to keep track of</span>
         <span class="c"># all the results</span>
         <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">rest_results</span><span class="p">:</span>
@@ -477,7 +595,7 @@
 <span class="sd">        :rtype: dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">suggest</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task_id</span><span class="p">))</span><span class="o">.</span><span class="n">go</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">suggest</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span><span class="p">))</span><span class="o">.</span><span class="n">go</span><span class="p">()</span>
         <span class="n">result_id</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
 
         <span class="c"># Poll the server for the actual variable values in the suggestion.  </span>
@@ -492,7 +610,7 @@
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
             <span class="c"># Don&#39;t return the outcome variable</span>
             <span class="k">if</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">var</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="nb">next</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
+                <span class="nb">next</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">python_types</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]][</span><span class="s">&#39;type&#39;</span><span class="p">]](</span><span class="n">var</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span>
             
         <span class="c"># Keep track of id / param_values relationship</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ids_to_param_values</span><span class="p">[</span><span class="n">result_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span>
@@ -515,6 +633,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_with_server</span><span class="p">()</span>
 
         <span class="nb">id</span> <span class="o">=</span> <span class="bp">None</span>
+
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ids_to_param_values</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">param_values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="nb">id</span> <span class="o">=</span> <span class="n">k</span>
@@ -532,7 +651,6 @@
 <span class="sd">        :param outcome_val: Value of the outcome.</span>
 <span class="sd">        :type outcome_val: type defined for outcome</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="n">outcome_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">outcome_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">outcome_val</span><span class="p">)</span>
 
@@ -540,8 +658,11 @@
         <span class="k">for</span> <span class="n">param</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">param_values</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">param</span><span class="o">+</span> <span class="s">&quot;&#39; not valid&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;min&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;max&#39;</span><span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">param</span><span class="o">+</span> <span class="s">&quot;&#39; should have value between &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;min&#39;</span><span class="p">])</span> <span class="o">+</span><span class="s">&quot; and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;max&#39;</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;float&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;integer&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;min&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;max&#39;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">param</span><span class="o">+</span> <span class="s">&quot;&#39; should have value between &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;min&#39;</span><span class="p">])</span> <span class="o">+</span><span class="s">&quot; and &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;max&#39;</span><span class="p">]))</span>
+            
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="n">python_types</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">]]:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Parameter &#39;&quot;</span> <span class="o">+</span><span class="n">param</span><span class="o">+</span> <span class="s">&quot;&#39; should be of type &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="s">&#39;type&#39;</span><span class="p">])</span>
 
@@ -555,7 +676,7 @@
 
         <span class="k">if</span> <span class="n">result_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c"># If not, then this is a result that was not suggested,</span>
-            <span class="c"># most add it to the server</span>
+            <span class="c"># must add it to the server</span>
 
             <span class="c">## Get a time stamp for this submitted result</span>
             <span class="c">#import datetime</span>
@@ -579,8 +700,8 @@
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Failed to update with non-suggested experiment&#39;</span><span class="p">)</span>
                 <span class="n">variables</span> <span class="o">+=</span> <span class="p">[{</span><span class="s">&#39;setting&#39;</span><span class="p">:</span><span class="n">setting_id</span><span class="p">,</span> <span class="s">&#39;result&#39;</span><span class="p">:</span><span class="n">result_id</span><span class="p">,</span> 
                            <span class="s">&#39;name&#39;</span><span class="p">:</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span><span class="n">value</span><span class="p">}]</span>
-                        
-            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">results</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>                    
+                
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">results</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_description</span><span class="p">)</span>
             <span class="n">result_id</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_ids_to_param_values</span><span class="p">[</span><span class="n">result_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_values</span>
@@ -608,7 +729,7 @@
 
         <span class="c"># Check whether this param_values has a results ID</span>
         <span class="nb">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_id</span><span class="p">(</span><span class="n">param_values</span><span class="p">)</span>
-        
+
         <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c"># Delete from internals</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ids_to_param_values</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
