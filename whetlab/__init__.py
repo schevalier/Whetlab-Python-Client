@@ -26,7 +26,7 @@ def catch_exception(f):
 
 INF_PAGE_SIZE = 1000000
 
-DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
+DEFAULT_API_URL = 'http://www.whetlab.com'
 
 supported_properties = set(['min','max','size','scale','units','type','options'])
 required_properties = {
