@@ -768,7 +768,7 @@ class Experiment:
         # Sync with the REST server
         self._sync_with_server()
 
-        # Report historical progress and experiments assumed pending
+        # Report historical progress and results assumed pending
         import matplotlib.pyplot as plt        
 
         # Get outcome values and put them in order of their IDs,
@@ -792,15 +792,15 @@ class Experiment:
         best_so_far = [ np.max(y[:(i+1)]) for i in range(len(y)) ]
         plt.scatter(range(len(y)),y,marker='x',color='k',label='Outcomes')
         plt.plot(range(len(y)),best_so_far,color='k',label='Best so far')
-        plt.xlabel('Result ID')
+        plt.xlabel('Result #')
         plt.ylabel(self.outcome_name)
-        plt.title('Outcome values progression')
+        plt.title('Results progression')
         plt.legend(loc=3)
         plt.draw()
         plt.ion()
         plt.show()
         
-        # Plot table of experiments
+        # Plot table of results
         plt.figure(2)
         param_names = list(np.sort(self.parameters.keys()))
         col_names = ['Result #'] + param_names + [self.outcome_name]
@@ -825,7 +825,7 @@ class Experiment:
             cell.set_fontsize(8)
 
         plt.axis('off')
-        plt.title('Table of experiments')
+        plt.title('Table of results')
         plt.draw()
         plt.ion()
         plt.show()
