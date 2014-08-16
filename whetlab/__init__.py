@@ -458,6 +458,10 @@ class Experiment:
             # (e.g. fetching the setting ids)
             self._sync_with_server()
 
+        pending = self.pending()
+        if len(pending) > 0:
+            print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
+
     def _find_experiment(self, name):
         """
         Look for experiment matching name and return its ID.
@@ -779,7 +783,7 @@ class Experiment:
         # Sync with the REST server
         self._sync_with_server()
 
-        # Report historical progress and experiments assumed pending
+        # Report historical progress and results assumed pending
         import matplotlib.pyplot as plt        
 
         # Get outcome values and put them in order of their IDs,
@@ -804,28 +808,30 @@ class Experiment:
         best_so_far = [ np.max(y[:(i+1)]) for i in range(len(y)) ]
         plt.scatter(range(len(y)),y,marker='x',color='k',label='Outcomes')
         plt.plot(range(len(y)),best_so_far,color='k',label='Best so far')
-        plt.xlabel('Experiment ID')
+        plt.xlabel('Result #')
         plt.ylabel(self.outcome_name)
-        plt.title('Outcome values progression')
+        plt.title('Results progression')
         plt.legend(loc=3)
         plt.draw()
         plt.ion()
         plt.show()
         
-        # Plot table of experiments
+        # Plot table of results
         plt.figure(2)
         param_names = list(np.sort(self.parameters.keys()))
-        col_names = param_names + [self.outcome_name]
+        col_names = ['Result #'] + param_names + [self.outcome_name]
         cell_text = []
-        for id in ids:
+        for nb,id in enumerate(ids):
             # Get paramater values, put in correct order and add to
             # table with corresponding outcome value
             params, values = zip(*self._ids_to_param_values[id].iteritems())
             s = np.argsort(params)
             values = np.array(values)[s]
             outcome = self._ids_to_outcome_values[id]
-            cell_text.append([str(v) for v in values] + [str(outcome)])
+            cell_text.append([str(nb+1)] + [str(v) for v in values] + [str(outcome)])
 
+        if len(cell_text) > 20:
+            cell_text = cell_text[-20:]
         the_table = plt.table(cellText = cell_text, colLabels=col_names, loc='center')
 
         ## change cell properties
@@ -835,24 +841,10 @@ class Experiment:
             cell.set_fontsize(8)
 
         plt.axis('off')
-        plt.title('Table of experiments')
+        plt.title('Table of results')
         plt.draw()
         plt.ion()
         plt.show()
 
-        ## Plot the sensitivity to each dimension of the input        
-        #sensitivity = self.chooser.get_sensitivity()
-        #if sensitivity.shape[0] > 1:
-        #   plt.figure(3)
-        #   plt.clf()
-        #   plt.bar(np.arange(sensitivity.shape[0]), sensitivity)
-        #   ax = plt.gca()
-        #   labels = []
-        #   ax.set_xticks(np.arange(sensitivity.shape[0]))
-        #   ax.set_xticklabels(param_names)
-        #   plt.title('Relative sensitivity of experiment variables')
-        #   plt.draw()
-        #   plt.ion()
-        #   plt.show()
 
 
