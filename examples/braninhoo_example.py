@@ -2,6 +2,7 @@
 # more interesting.
 import whetlab
 import numpy as np
+import time
 
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},

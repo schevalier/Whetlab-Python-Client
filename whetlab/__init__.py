@@ -1,4 +1,5 @@
 import os
+import ast
 import tempfile
 import ConfigParser
 import collections
@@ -50,7 +51,7 @@ default_values = {
     'type':'float'
 }
 legal_values = {
-    'size':set([1]),
+    'size':set(range(25)),
     'scale':set(['linear','log']),
     'type':set(['float', 'integer', 'enum'])
 }
@@ -457,6 +458,10 @@ class Experiment:
             # (e.g. fetching the setting ids)
             self._sync_with_server()
 
+        pending = self.pending()
+        if len(pending) > 0:
+            print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
+
     def _find_experiment(self, name):
         """
         Look for experiment matching name and return its ID.
@@ -561,7 +566,15 @@ class Experiment:
         for var in variables:
             # Don't return the outcome variable
             if cmp(var['name'],self.outcome_name) != 0:
-                next[var['name']] = python_types[self.parameters[var['name']]['type']](var['value'])
+                if isinstance(var['value'], str):
+                    value = ast.literal_eval(var['value'])
+                else:
+                    value = var['value']
+
+                if isinstance(value, list) or isinstance(value, np.ndarray):
+                    next[var['name']] = [python_types[self.parameters[var['name']]['type']](v) for v in value]
+                else:
+                    next[var['name']] = python_types[self.parameters[var['name']]['type']](value)
             
         # Keep track of id / param_values relationship
         self._ids_to_param_values[result_id] = next
@@ -611,10 +624,17 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' not valid")
 
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
-                if value < self.parameters[param]['min'] or value > self.parameters[param]['max']:
+                if np.any(np.array(value) < self.parameters[param]['min']) or np.any(np.array(value) > self.parameters[param]['max']):
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
-            if type(value) != python_types[self.parameters[param]['type']]:
+            if isinstance(value, np.ndarray) or isinstance(value, list):
+                value_type = {type(np.asscalar(np.array(v))) for v in value}
+                if len(value_type) > 1:
+                    raise TypeError('All returned values for a variable should have the same type.')
+                value_type = value_type.pop()
+            else:
+                value_type = type(value)
+            if value_type != python_types[self.parameters[param]['type']]:
                 raise TypeError("Parameter '" +param+ "' should be of type " + self.parameters[param]['type'])
 
         # Check is all parameter values are specified
@@ -651,7 +671,7 @@ class Experiment:
                     raise ValueError('Failed to update with non-suggested experiment')
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
-                
+
             res = self._client.results().add(variables, self.experiment_id, True, self.experiment_description)
             result_id = res.body['id']
 
@@ -667,7 +687,6 @@ class Experiment:
                     break # Assume only one outcome per experiment!
             res = self._client.result(str(result_id)).update(**result)
             self._ids_to_outcome_values[result_id] = outcome_val
-        
 
     @catch_exception
     def cancel(self,param_values):
@@ -764,7 +783,7 @@ class Experiment:
         # Sync with the REST server
         self._sync_with_server()
 
-        # Report historical progress and experiments assumed pending
+        # Report historical progress and results assumed pending
         import matplotlib.pyplot as plt        
 
         # Get outcome values and put them in order of their IDs,
@@ -777,6 +796,7 @@ class Experiment:
         s = ids.argsort()
         ids = ids[s]
         outcome_values = outcomes_values[s]
+        outcome_values = np.array([float(i) for i in outcome_values])
         if outcome_values.size == 0 or np.all(np.isinf(outcome_values)):
             print 'There are no completed results to report'
             return
@@ -788,28 +808,30 @@ class Experiment:
         best_so_far = [ np.max(y[:(i+1)]) for i in range(len(y)) ]
         plt.scatter(range(len(y)),y,marker='x',color='k',label='Outcomes')
         plt.plot(range(len(y)),best_so_far,color='k',label='Best so far')
-        plt.xlabel('Experiment ID')
+        plt.xlabel('Result #')
         plt.ylabel(self.outcome_name)
-        plt.title('Outcome values progression')
+        plt.title('Results progression')
         plt.legend(loc=3)
         plt.draw()
         plt.ion()
         plt.show()
         
-        # Plot table of experiments
+        # Plot table of results
         plt.figure(2)
         param_names = list(np.sort(self.parameters.keys()))
-        col_names = param_names + [self.outcome_name]
+        col_names = ['Result #'] + param_names + [self.outcome_name]
         cell_text = []
-        for id in ids:
+        for nb,id in enumerate(ids):
             # Get paramater values, put in correct order and add to
             # table with corresponding outcome value
             params, values = zip(*self._ids_to_param_values[id].iteritems())
             s = np.argsort(params)
             values = np.array(values)[s]
             outcome = self._ids_to_outcome_values[id]
-            cell_text.append([str(v) for v in values] + [str(outcome)])
+            cell_text.append([str(nb+1)] + [str(v) for v in values] + [str(outcome)])
 
+        if len(cell_text) > 20:
+            cell_text = cell_text[-20:]
         the_table = plt.table(cellText = cell_text, colLabels=col_names, loc='center')
 
         ## change cell properties
@@ -819,24 +841,10 @@ class Experiment:
             cell.set_fontsize(8)
 
         plt.axis('off')
-        plt.title('Table of experiments')
+        plt.title('Table of results')
         plt.draw()
         plt.ion()
         plt.show()
 
-        ## Plot the sensitivity to each dimension of the input        
-        #sensitivity = self.chooser.get_sensitivity()
-        #if sensitivity.shape[0] > 1:
-        #   plt.figure(3)
-        #   plt.clf()
-        #   plt.bar(np.arange(sensitivity.shape[0]), sensitivity)
-        #   ax = plt.gca()
-        #   labels = []
-        #   ax.set_xticks(np.arange(sensitivity.shape[0]))
-        #   ax.set_xticklabels(param_names)
-        #   plt.title('Relative sensitivity of experiment variables')
-        #   plt.draw()
-        #   plt.ion()
-        #   plt.show()
 
 
