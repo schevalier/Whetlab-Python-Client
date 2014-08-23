@@ -26,7 +26,7 @@ def catch_exception(f):
 
 INF_PAGE_SIZE = 1000000
 
-DEFAULT_API_URL = 'http://whetlab-server.elasticbeanstalk.com'
+DEFAULT_API_URL = 'http://www.whetlab.com'
 
 supported_properties = set(['min','max','size','scale','units','type','options'])
 required_properties = {
@@ -445,7 +445,7 @@ class Experiment:
                 res = self._client.experiments().create(name=self.experiment, 
                                                         description=self.experiment_description,
                                                         settings=settings)
-                self.experiment_id = res.body['id']
+                self.experiment_id = res.body['id']                
             except Exception as inst:
                 # If experiment creation doesn't work, then retry resuming the experiment.
                 # This is for cases where two processes are starting an experiment, and
