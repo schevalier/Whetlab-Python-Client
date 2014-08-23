@@ -19,7 +19,10 @@ scientist = whetlab.Experiment(name=name, access_token=access_token, description
 
 # Braninhoo function
 def garbage(**params):
-    return np.random.randn()
+    if np.random.rand() < 0.2:
+      return np.nan
+    else:
+      return np.random.randn()
 
 for i in range(10000):
     # Get suggested new experiment
