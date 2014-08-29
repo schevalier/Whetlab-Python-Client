@@ -1,5 +1,5 @@
 global-include *.rst
 global-include *.txt
 global-include *.md
-recursive-include doc *
+recursive-include docs *
 recursive-include examples *
