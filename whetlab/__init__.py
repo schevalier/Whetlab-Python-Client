@@ -26,7 +26,7 @@ def catch_exception(f):
 
 INF_PAGE_SIZE = 1000000
 
-DEFAULT_API_URL = 'http://www.whetlab.com'
+DEFAULT_API_URL = 'https://www.whetlab.com'
 
 supported_properties = set(['min','max','size','scale','units','type','options'])
 required_properties = {
@@ -289,7 +289,7 @@ class Experiment:
     should have the keys:
 
     * ``'name'``: name (``str``) for the outcome being optimized
-    * ``'type'``: type of the parameter, either ``'float'``, ``'int'`` or  ``'enum'`` (default: ``'float'``)
+    * ``'type'``: type of the parameter, either ``'float'``, ``'integer'`` or  ``'enum'`` (default: ``'float'``)
     * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
 
     If ``name`` and ``description`` match a previously created experiment,
@@ -399,7 +399,15 @@ class Experiment:
                     if property not in supported_properties:
                         raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
 
-                ptype = param['type'] if param.has_key('type') else default_values['type']
+                # If not type provided, use default
+                if not param.has_key('type'):
+                    param['type'] = default_values['type']
+                ptype = param['type']  
+                
+                # Map type 'int' to 'integer'
+                if cmp(ptype,'int') == 0:
+                    ptype = 'integer'
+                    param['type'] = 'integer'
 
                 if ptype not in validate:
                     raise ValueError("Parameter '%s' uses unsupported type '%s'." % (key, ptype))
@@ -445,7 +453,7 @@ class Experiment:
                 res = self._client.experiments().create(name=self.experiment, 
                                                         description=self.experiment_description,
                                                         settings=settings)
-                self.experiment_id = res.body['id']                
+                self.experiment_id = res.body['id']
             except Exception as inst:
                 # If experiment creation doesn't work, then retry resuming the experiment.
                 # This is for cases where two processes are starting an experiment, and
