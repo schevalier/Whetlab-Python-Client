@@ -657,23 +657,14 @@ class Experiment:
             # If not, then this is a result that was not suggested,
             # must add it to the server
 
-            ## Get a time stamp for this submitted result
-            #import datetime
-            #import json
-            #
-            #dthandler = lambda obj: (
-            #   obj.isoformat()
-            #   if isinstance(obj, datetime.datetime)
-            #   or isinstance(obj, datetime.date)
-            #   else None)
-            #date = json.loads(json.dumps(datetime.datetime.now(), default=dthandler))            
-
             # Create variables for new result
             variables = []
             for name, setting_id in self._param_names_to_setting_ids.iteritems():
                 if name in param_values:
                     value = param_values[name]
                 elif name == self.outcome_name:
+                    if outcome_val is None:
+                        continue # We don't put in None, simply leave empty
                     value = outcome_val
                 else:
                     raise ValueError('Failed to update with non-suggested experiment')
@@ -687,14 +678,15 @@ class Experiment:
             
         else:
             # Fill in result with the given outcome value
-            result = self._client.result(str(result_id)).get().body
-            for var in result['variables']:
-                if var['name'] == self.outcome_name:
-                    var['value'] = outcome_val
-                    self._ids_to_outcome_values[result_id] = var
-                    break # Assume only one outcome per experiment!
-            res = self._client.result(str(result_id)).update(**result)
-            self._ids_to_outcome_values[result_id] = outcome_val
+            if outcome_val is not None:
+                result = self._client.result(str(result_id)).get().body
+                for var in result['variables']:
+                    if var['name'] == self.outcome_name:
+                        var['value'] = outcome_val
+                        self._ids_to_outcome_values[result_id] = var
+                        break # Assume only one outcome per experiment!
+                res = self._client.result(str(result_id)).update(**result)
+                self._ids_to_outcome_values[result_id] = outcome_val
 
     @catch_exception
     def cancel(self,param_values):
