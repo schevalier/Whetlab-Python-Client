@@ -217,7 +217,7 @@ def _validate_enum(name, properties):
         raise ValueError("Parameter '%s': must give at least 3 options." % name)
 
     if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
-        raise ValueError("Parameter '%s': options must be of type %s." % name, python_types['enum'])
+        raise ValueError("Parameter '%s': options must be of type %s." % (name, python_types['enum']))
 
 reformat_from_rest = {'integer': _reformat_integer,
                       'float'  : _reformat_float,
