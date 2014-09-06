@@ -224,7 +224,7 @@ def _validate_enum(name, properties):
                 "numbers, whitespace, hyphens and underscores ([a-zA-Z0-9_-\s])" % (option))        
 
     if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
-        raise ValueError("Parameter '%s': options must be of type %s." % name, python_types['enum'])
+        raise ValueError("Parameter '%s': options must be of type %s." % (name, python_types['enum']))
 
 reformat_from_rest = {'integer': _reformat_integer,
                       'float'  : _reformat_float,
@@ -236,7 +236,7 @@ validate = {'integer': _validate_integer,
 
 
 @catch_exception
-def delete_experiment(access_token, name):
+def delete_experiment(access_token=None, name='Default name'):
     """
     Delete the experiment with the given name.  
 
@@ -632,12 +632,14 @@ class Experiment:
         """
         if outcome_val is not None:
             outcome_val = float(outcome_val)
-
         # Check if param_values is compatible
         for param,value in param_values.iteritems():
             if param not in self.parameters:
                 raise ValueError("Parameter '" +param+ "' not valid")
 
+            if np.array(value).size != self.parameters[param]['size']:
+                raise ValueError("Parameter '" +param+ "' should be of size "+str(self.parameters[param]['size']))
+            
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
                 if np.any(np.array(value) < self.parameters[param]['min']) or np.any(np.array(value) > self.parameters[param]['max']):
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))

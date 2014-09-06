@@ -10,6 +10,8 @@ default_parameters = { 'p1':{'type':'float', 'min':0, 'max':10.0, 'size':1},
                             'p2':{'type':'integer', 'min':0, 'max':10, 'size':1}}
 default_outcome = {'name':'Dummy outcome', 'type':'float'}
 
+last_created_experiment = ""
+
 def test_required_prop_are_supported():
     """ All required properties should be supported, for parameters and outcome. """
     
@@ -501,3 +503,83 @@ class TestExperiment:
 
         scientist.update({'p1':5,'p2':1},5)
 
+    def test_create_experiment_with_defaults(self):
+        """ Can create experiment with floats/integers simply by specifying min/max."""
+
+        minimal_parameter_description = {'p1':{'min':0,'max':10}, 'p2':{'type':'integer', 'min':1, 'max':4}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=minimal_parameters_description,
+                                       outcome=default_outcome)
+
+
+    def test_create_experiment_with_defaults(self):
+        """ Can create experiment with floats/integers simply by specifying min/max."""
+
+        minimal_parameters_description = {'p1':{'min':0,'max':10}, 'p2':{'type':'integer', 'min':1, 'max':4}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=minimal_parameters_description,
+                                       outcome=default_outcome)
+
+
+    def test_int_instead_of_integer(self):
+        """ Can use 'int' as type, instead of 'integer'."""
+
+        parameters = {'p1':{'type':'int', 'min':1, 'max':4}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)
+
+
+    def test_multidimensional_parameters(self):
+        """ Can use multidimensional parameters."""
+
+        parameters = { 'p1':{'type':'float', 'min':0, 'max':10.0, 'size':3},
+                       'p2':{'type':'integer', 'min':0, 'max':10, 'size':5}}
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)
+
+        job = scientist.suggest()
+        assert(len(job['p1']) == 3)
+        assert(len(job['p2']) == 5)
+        scientist.update({'p1':[1.2,2.3,3.4],'p2':[4,2,5,2,1]},10.2)
+        
+    @raises(ValueError)
+    def test_multidimensional_correct_size(self):
+        """ Parameters must have correct size."""
+
+        parameters = { 'p1':{'type':'float', 'min':0, 'max':10.0, 'size':3},
+                       'p2':{'type':'integer', 'min':0, 'max':10, 'size':5}}
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)
+
+        scientist.update({'p1':[1.2,2.3,3.4],'p2':[4,2,5]},10.2)
+        
+    @raises(ValueError)
+    def test_multidimensional_min_max(self):
+        """ All dimensions must be within min/max bounds."""
+
+        parameters = { 'p1':{'type':'float', 'min':0, 'max':10.0, 'size':3},
+                       'p2':{'type':'integer', 'min':0, 'max':10, 'size':5}}
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)
+
+        scientist.update({'p1':[1.2,2.3,3.4],'p2':[4,2,5,12,3]},10.2)
+        
