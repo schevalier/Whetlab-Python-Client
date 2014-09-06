@@ -247,6 +247,37 @@ class TestExperiment:
                                        parameters=bad_parameters,
                                        outcome=default_outcome)
 
+    def test_good_enum_options(self):
+        """ Enum options with a legal name. """
+
+        bad_parameters = { 'p1':{'type':'enum', 'options':['one', 'two', 'three']}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    def test_enum_with_two_options(self):
+        """ Enums should work with just two options. """
+
+        bad_parameters = { 'p1':{'type':'enum', 'options':['one', 'two']}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)        
+
+    @raises(whetlab.server.error.client_error.ClientError)
+    def test_bad_enum_options(self):
+        """ Enum options must take a legal name. """
+
+        bad_parameters = { 'p1':{'type':'enum', 'options':['1','2','3']}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
     @raises(whetlab.server.error.client_error.ClientError)
     def test_access_token(self):
         """ Valid access token must be provided. """
