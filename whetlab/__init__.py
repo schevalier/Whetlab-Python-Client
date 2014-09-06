@@ -213,8 +213,15 @@ def _validate_enum(name, properties):
             properties[property] = default
 
     # Check compatibility of properties
-    if len(properties['options']) < 3:
-        raise ValueError("Parameter '%s': must give at least 3 options." % name)
+    if len(properties['options']) < 2:
+        raise ValueError("Parameter '%s': must give at least 2 options." % name)
+
+    validpat = re.compile('^[a-zA-Z_]+[\w\s]*\Z')
+    for option in self.options:
+        if validpat.match(option) is None:
+            raise ValueError("Invalid enum option: %s "
+                "Options must be a string beginning with a letter and containing only letters, "
+                "numbers, whitespace, hyphens and underscores ([a-zA-Z0-9_-\s])" % (option))        
 
     if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
         raise ValueError("Parameter '%s': options must be of type %s." % name, python_types['enum'])
