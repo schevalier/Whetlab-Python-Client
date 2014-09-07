@@ -6,6 +6,7 @@ import collections
 import numpy as np
 import server
 import time
+import re
 import functools
 import requests
 
@@ -217,7 +218,7 @@ def _validate_enum(name, properties):
         raise ValueError("Parameter '%s': must give at least 2 options." % name)
 
     validpat = re.compile('^[a-zA-Z_]+[\w\s]*\Z')
-    for option in self.options:
+    for option in properties['options']:
         if validpat.match(option) is None:
             raise ValueError("Invalid enum option: %s "
                 "Options must be a string beginning with a letter and containing only letters, "
@@ -233,7 +234,6 @@ reformat_from_rest = {'integer': _reformat_integer,
 validate = {'integer': _validate_integer,
             'float'  : _validate_float,
             'enum'   : _validate_enum}
-
 
 @catch_exception
 def delete_experiment(access_token=None, name='Default name'):
@@ -556,7 +556,6 @@ class Experiment:
                 else:
                     self._ids_to_param_values[res_id][v['name']] = v['value']
 
-
     @catch_exception
     def suggest(self):
         """
@@ -618,7 +617,6 @@ class Experiment:
                 id = k
 
         return id
-    
 
     @catch_exception
     def update(self, param_values, outcome_val):
