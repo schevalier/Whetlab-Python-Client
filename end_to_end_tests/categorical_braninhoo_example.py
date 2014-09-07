@@ -6,7 +6,7 @@ import numpy as np
 # Define parameters to optimize
 parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1},
-               'Z' : {'type': 'enum', 'options': ['bad','Good!','OK']}}
+               'Z' : {'type': 'enum', 'options': ['bad','Good','OK']}}
 
 access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 name = 'Categorical Braninhoo'
