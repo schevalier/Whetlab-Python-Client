@@ -19,7 +19,7 @@ def categorical_braninhoo(X,Y,Z):
     if X > 10:
         return np.nan
 
-    Z = 1 if Z == 'Good!' else 2 if Z == 'OK' else 3
+    Z = 1 if Z == 'Good' else 2 if Z == 'OK' else 3
     return np.square(Y - (5.1/(4*np.square(np.pi)))*np.square(X) + (5/np.pi)*X - 6) + 10*(1-(1./(8*np.pi)))*np.cos(X) + 10*Z;
 
 for i in range(10000):
