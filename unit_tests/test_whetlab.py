@@ -3,6 +3,8 @@ import whetlab, whetlab.server
 from time import time, sleep
 from nose.tools import with_setup
 
+whetlab.RETRY_TIMES = [] # So that it doesn't wait forever for tests that raise errors
+
 default_access_token = None
 
 default_description = ''
@@ -269,7 +271,7 @@ class TestExperiment:
                                        parameters=bad_parameters,
                                        outcome=default_outcome)        
 
-    @raises(whetlab.server.error.client_error.ClientError)
+    @raises(ValueError)
     def test_bad_enum_options(self):
         """ Enum options must take a legal name. """
 
@@ -279,6 +281,18 @@ class TestExperiment:
                                        description=default_description,
                                        parameters=bad_parameters,
                                        outcome=default_outcome)
+
+    @raises(ValueError)
+    def test_bad_enum_update(self):
+        """ Enum can't update with value not in options. """
+
+        bad_parameters = { 'p1':{'type':'enum', 'options':['one', 'two', 'three']}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+        scientist.update({'p1':'four'},10.)
 
     @raises(whetlab.server.error.client_error.ClientError)
     def test_access_token(self):

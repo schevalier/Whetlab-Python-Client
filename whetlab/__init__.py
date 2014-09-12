@@ -603,6 +603,11 @@ class Experiment:
                 if np.any(np.array(value) < self.parameters[param]['min']) or np.any(np.array(value) > self.parameters[param]['max']):
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
+            if self.parameters[param]['type'] == 'enum':
+                list_value = [value] if type(value) == str else value
+                if not np.all([ v in self.parameters[param]['options'] for v in list_value]):
+                    raise ValueError("Enum parameter '" +param+ "' should take values in " + str(self.parameters[param]['options']))
+            
             if isinstance(value, np.ndarray) or isinstance(value, list):
                 value_type = {type(np.asscalar(np.array(v))) for v in value}
                 if len(value_type) > 1:
@@ -802,19 +807,22 @@ class Experiment:
         plt.show()
 
 
-
-MAX_RETRIES = 3
-TIME_BETWEEN_RETRIES = 10
+RETRY_TIMES = [5,30,60,150,300]
 
 def retry(f):
     @functools.wraps(f)
     def func(*args, **kwargs):
-        for i in range(MAX_RETRIES):
+        for i in range(len(RETRY_TIMES)+1):
             try:
                 return f(*args, **kwargs)
-            except Exception as e:
-                if i == MAX_RETRIES-1:
+            except (requests.exceptions.ConnectionError, server.error.ClientError) as e:
+                if i == len(RETRY_TIMES):
                     raise e
+                print 'WARNING: experiencing problems communicating with the server. Will try again in',RETRY_TIMES[i],'seconds.'
+                time.sleep(RETRY_TIMES[i])
+            except:
+                raise 
+                       
     return func
 
 class SimpleREST:
