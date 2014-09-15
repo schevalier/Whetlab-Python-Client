@@ -818,7 +818,8 @@ def retry(f):
             except (requests.exceptions.ConnectionError, server.error.ClientError) as e:
                 if i == len(RETRY_TIMES):
                     raise e
-                print 'WARNING: experiencing problems communicating with the server. Will try again in',RETRY_TIMES[i],'seconds.'
+                if i >=1 : # Only warn starting at the 2nd retry
+                    print 'WARNING: experiencing problems communicating with the server. Will try again in',RETRY_TIMES[i],'seconds.'
                 time.sleep(RETRY_TIMES[i])
             except:
                 raise 
