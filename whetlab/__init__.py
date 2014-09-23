@@ -816,6 +816,11 @@ def retry(f):
             try:
                 return f(*args, **kwargs)
             except (requests.exceptions.ConnectionError, server.error.ClientError) as e:
+
+                # Only retry for the generic ClientError "Unable to understand..."
+                if type(e) == server.error.ClientError and e.message != "Unable to understand the content type of response returned by request responsible for error":
+                    raise
+
                 if i == len(RETRY_TIMES):
                     raise e
                 if i >=1 : # Only warn starting at the 2nd retry

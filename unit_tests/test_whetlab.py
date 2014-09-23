@@ -271,6 +271,18 @@ class TestExperiment:
                                        parameters=bad_parameters,
                                        outcome=default_outcome)        
 
+    def test_enum_update(self):
+        """ Update supports enum. """
+
+        parameters = { 'p1':{'type':'enum', 'options':['one', 'two']}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)        
+
+        scientist.update({'p1':'one'},10)
+
     @raises(ValueError)
     def test_bad_enum_options(self):
         """ Enum options must take a legal name. """
@@ -293,6 +305,46 @@ class TestExperiment:
                                        parameters=bad_parameters,
                                        outcome=default_outcome)
         scientist.update({'p1':'four'},10.)
+
+    def test_list_enum_update(self):
+        """ Update supports list of enums (size > 1). """
+
+        parameters = { 'p1':{'type':'enum', 'options':['one', 'two', 'three'], 'size':3}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)        
+        job =  {u'p1':['three','one','one']}
+        scientist.update(job,10.)
+
+    def test_list_enum_suggest(self):
+        """ Suggest supports list of enums (size > 1). """
+
+        parameters = { 'p1':{'type':'enum', 'options':['one', 'two'], 'size':3}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=parameters,
+                                       outcome=default_outcome)        
+
+        job = scientist.suggest()
+        assert(len(job['p1']) == 3)
+        assert(job['p1'][0] in {'one','two'})
+        assert(job['p1'][1] in {'one','two'})
+        assert(job['p1'][2] in {'one','two'})
+
+    @raises(ValueError)
+    def test_list_bad_enum_update(self):
+        """ Enum can't update when one value in list (size>1) not in options. """
+
+        bad_parameters = { 'p1':{'type':'enum', 'options':['one', 'two', 'three'],'size':4}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+        scientist.update({'p1':['one','two','one','four']},10.)
 
     @raises(whetlab.server.error.client_error.ClientError)
     def test_access_token(self):
