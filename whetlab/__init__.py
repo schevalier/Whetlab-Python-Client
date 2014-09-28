@@ -648,6 +648,7 @@ class Experiment:
             result_id = self._client.add_result(variables, self.experiment_id, self.experiment_description)
 
             self._ids_to_param_values[result_id] = param_values
+            self._ids_to_outcome_values[result_id] = outcome_val
             
         else:
             # Fill in result with the given outcome value
@@ -656,7 +657,6 @@ class Experiment:
                 for var in result['variables']:
                     if var['name'] == self.outcome_name:
                         var['value'] = outcome_val
-                        self._ids_to_outcome_values[result_id] = var
                         break # Assume only one outcome per experiment!
                 self._client.update_result(result_id,result)
                 self._ids_to_outcome_values[result_id] = outcome_val
@@ -818,7 +818,7 @@ def retry(f):
             except requests.exceptions.ConnectionError as e:
                 if i == len(RETRY_TIMES):
                     raise e
-                if i >=1 : # Only warn starting at the 2nd retry
+                if i >=3 : # Only warn starting at the 2nd retry
                     print 'WARNING: experiencing problems communicating with the server. Will try again in',RETRY_TIMES[i],'seconds.'
                 time.sleep(RETRY_TIMES[i])
             except:
