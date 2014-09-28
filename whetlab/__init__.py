@@ -252,7 +252,7 @@ def delete_experiment(access_token=None, name='Default name'):
         scientist = Experiment(access_token, name, resume=True)
     except ValueError:
         raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
-    scientist._delete()
+    scientist._client.delete_experiment(scientist.experiment_id)
 
 @catch_exception
 def load_config():
@@ -359,13 +359,7 @@ class Experiment:
             else:
                 raise Exception("No access token specified in dotfile or via constructor.")
 
-        # Create REST server client
-        options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
-                    'user_agent':'whetlab_python_client',
-                    'api_version':'api',
-                    'base': url})
-        
-        self._client = server.Client({},options)
+        self._client = SimpleREST(access_token, url)
 
         # Make a few obvious asserts
         if name == '' or type(name) not in [str,unicode]:
@@ -377,7 +371,7 @@ class Experiment:
         self.experiment = name
         self.experiment_description = description
 
-        self.experiment_id = self._find_experiment(self.experiment)
+        self.experiment_id = self._client.find_experiment(self.experiment)
 
         if self.experiment_id is not None and resume:
             # Sync all the internals with the REST server
@@ -457,15 +451,12 @@ class Experiment:
 
             # Create experiment.
             try:
-                res = self._client.experiments().create(name=self.experiment, 
-                                                        description=self.experiment_description,
-                                                        settings=settings)
-                self.experiment_id = res.body['id']
+                self.experiment_id = self._client.create_experiment(self.experiment, self.experiment_description, settings)
             except Exception as inst:
                 # If experiment creation doesn't work, then retry resuming the experiment.
                 # This is for cases where two processes are starting an experiment, and
                 # one gets to create it first while the other should be resuming it.
-                self.experiment_id = self._find_experiment(self.experiment)
+                self.experiment_id = self._client.find_experiment(self.experiment)
                 if not resume or self.experiment_id is None :
                     raise inst
 
@@ -477,32 +468,6 @@ class Experiment:
         if len(pending) > 0:
             print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
 
-    def _find_experiment(self, name):
-        """
-        Look for experiment matching name and return its ID.
-
-        :param name: Experiment's name
-        :type name: str
-        :return: Experiment's ID.
-        :rtype: int
-        """
-
-        # Search one page at a time
-        page = 1
-        more_pages = True
-        while more_pages:
-            rest_exps = self._client.experiments().get({'query':{'page':page}}).body
-
-            # Check if more pages to come
-            more_pages = rest_exps['next'] is not None
-            page += 1
-        
-            # Find in current page whether we find the experiment we are looking for
-            rest_exps = rest_exps['results']
-            for exp in rest_exps:
-                if cmp(exp['name'],name) == 0:
-                    return exp['id']
-        return None
 
     @catch_exception
     def _sync_with_server(self):
@@ -510,9 +475,7 @@ class Experiment:
         Synchronize the client's internals with the REST server.
         """
 
-        res = self._client.experiments().get({'query':{'id':self.experiment_id}}).body['results'][0]
-        self.experiment = res['name']
-        self.experiment_description = res['description']
+        self.experiment, self.experiment_description = self._client.get_experiment_name_and_description(self.experiment_id)
 
         # Reset internals
         self._ids_to_param_values = {}
@@ -520,9 +483,7 @@ class Experiment:
         self._param_names_to_setting_ids = {}
 
         # Get settings for this experiment, to get the parameter and outcome names
-        rest_parameters = self._client.settings().get(str(self.experiment_id),{'query':{'page_size':INF_PAGE_SIZE}}).body
-        rest_parameters = rest_parameters['results']
-
+        rest_parameters = self._client.get_parameters(self.experiment_id)
         self.parameters = {}
         for rest_param in rest_parameters:
             rest_param
@@ -539,7 +500,7 @@ class Experiment:
                 self.parameters[name] = reformat_from_rest[type](rest_param)
 
         # Get results generated so far for this experiment
-        rest_results = self._client.results().get({'query': {'experiment':self.experiment_id,'page_size':INF_PAGE_SIZE}}).body['results']
+        rest_results = self._client.get_results(self.experiment_id)
         # Construct things needed by client internally, to keep track of
         # all the results
         for res in rest_results:
@@ -565,15 +526,15 @@ class Experiment:
         :rtype: dict
         """
 
-        res = self._client.suggest(str(self.experiment_id)).go()
-        result_id = res.body['id']
+        result_id = self._client.get_suggestion(self.experiment_id)
 
         # Poll the server for the actual variable values in the suggestion.  
-        variables = res.body['variables']
+        result = self._client.get_result(result_id)
+        variables = result['variables']
         while not variables:
             time.sleep(2)
-            result = self._client.result(str(result_id)).get()
-            variables = result.body['variables']
+            result = self._client.get_result(result_id)
+            variables = result['variables']
 
         # Put in nicer format
         next = {}
@@ -642,6 +603,11 @@ class Experiment:
                 if np.any(np.array(value) < self.parameters[param]['min']) or np.any(np.array(value) > self.parameters[param]['max']):
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
+            if self.parameters[param]['type'] == 'enum':
+                list_value = [value] if type(value) == str else value
+                if not np.all([ v in self.parameters[param]['options'] for v in list_value]):
+                    raise ValueError("Enum parameter '" +param+ "' should take values in " + str(self.parameters[param]['options']))
+            
             if isinstance(value, np.ndarray) or isinstance(value, list):
                 value_type = {type(np.asscalar(np.array(v))) for v in value}
                 if len(value_type) > 1:
@@ -678,21 +644,21 @@ class Experiment:
                 variables += [{'setting':setting_id, 'result':result_id, 
                            'name':name, 'value':value}]
 
-            res = self._client.results().add(variables, self.experiment_id, True, self.experiment_description)
-            result_id = res.body['id']
+
+            result_id = self._client.add_result(variables, self.experiment_id, self.experiment_description)
 
             self._ids_to_param_values[result_id] = param_values
             
         else:
             # Fill in result with the given outcome value
             if outcome_val is not None:
-                result = self._client.result(str(result_id)).get().body
+                result = self._client.get_result(result_id)
                 for var in result['variables']:
                     if var['name'] == self.outcome_name:
                         var['value'] = outcome_val
                         self._ids_to_outcome_values[result_id] = var
                         break # Assume only one outcome per experiment!
-                res = self._client.result(str(result_id)).update(**result)
+                self._client.update_result(result_id,result)
                 self._ids_to_outcome_values[result_id] = outcome_val
 
     @catch_exception
@@ -714,22 +680,9 @@ class Experiment:
                 del self._ids_to_outcome_values[id]
 
             # Delete from server
-            self._client.result(str(id)).delete()
+            self._client.delete_result(id)
         else:
             print 'Did not find experiment with the provided parameters'
-
-
-    @catch_exception
-    def _delete(self):
-        """
-        Delete the experiment with the given name and description.  
-        
-        Important, this cancels the experiment and removes all saved results!
-        
-        """
-
-        res = self._client.experiment(str(self.experiment_id)).delete()
-        print 'Experiment has been deleted'
 
     @catch_exception
     def pending(self):
@@ -854,4 +807,137 @@ class Experiment:
         plt.show()
 
 
+RETRY_TIMES = [5,30,60,150,300]
+
+def retry(f):
+    @functools.wraps(f)
+    def func(*args, **kwargs):
+        for i in range(len(RETRY_TIMES)+1):
+            try:
+                return f(*args, **kwargs)
+            except requests.exceptions.ConnectionError as e:
+                if i == len(RETRY_TIMES):
+                    raise e
+                if i >=1 : # Only warn starting at the 2nd retry
+                    print 'WARNING: experiencing problems communicating with the server. Will try again in',RETRY_TIMES[i],'seconds.'
+                time.sleep(RETRY_TIMES[i])
+            except:
+                raise 
+                       
+    return func
+
+class SimpleREST:
+    """
+    Simple class that wraps calls to the web server through the REST API.
+
+    The main reason for this class is to deal with retries, to be
+    robust to glitches in the communication with the server.
+    """
+
+    def __init__(self, access_token, url):
+
+        # Create REST server client
+        options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
+                    'user_agent':'whetlab_python_client',
+                    'api_version':'api',
+                    'base': url})
+        
+        self._client = server.Client({},options)
+
+    @retry
+    def create_experiment(self, name, description, settings):
+        """
+        Create experiment and return its ID.
+        """
+        
+        res = self._client.experiments().create(name=name, 
+                                                description=description,
+                                                settings=settings)
+        return res.body['id']
+
+    @retry
+    def delete_experiment(self, id):
+        """
+        Delete experiment with the given ID ``id``.
+        """
+
+        res = self._client.experiment(str(id)).delete()
+        print 'Experiment has been deleted'
+
+    @retry
+    def find_experiment(self, name):
+        """
+        Look for experiment matching name and return its ID.
+
+        :param name: Experiment's name
+        :type name: str
+        :return: Experiment's ID.
+        :rtype: int
+        """
+
+        # Search one page at a time
+        page = 1
+        more_pages = True
+        while more_pages:
+            rest_exps = self._client.experiments().get({'query':{'page':page}}).body
+
+            # Check if more pages to come
+            more_pages = rest_exps['next'] is not None
+            page += 1
+        
+            # Find in current page whether we find the experiment we are looking for
+            rest_exps = rest_exps['results']
+            for exp in rest_exps:
+                if cmp(exp['name'],name) == 0:
+                    return exp['id']
+        return None
+
+    @retry
+    def get_experiment_name_and_description(self, id):
+        res = self._client.experiments().get({'query':{'id':id}}).body['results'][0]
+        return res['name'], res['description']
+        
+    @retry
+    def get_parameters(self, id):
+        return self._client.settings().get(str(id),{'query':{'page_size':INF_PAGE_SIZE}}).body['results']
+
+    @retry
+    def get_results(self, id):
+        return self._client.results().get({'query': {'experiment':id,'page_size':INF_PAGE_SIZE}}).body['results']
+
+    @retry
+    def get_suggestion(self, id):
+        """
+        Get suggestion. Obtained in the form of a result ID.
+        """
+        return  self._client.suggest(str(id)).go().body['id']
+
+    @retry
+    def get_result(self, result_id):
+        """
+        Get a result from its ID.
+        """
+        return self._client.result(str(result_id)).get().body
+
+    @retry
+    def add_result(self, variables, id, experiment_description):
+        """
+        Add a result with variable assignments from ``variables``,
+        to experiment with ID ``id``.
+        """
+        return self._client.results().add(variables, id, True, experiment_description).body['id']
+
+    @retry
+    def update_result(self, result_id, result):
+        """
+        Update a result from its ID ``result_id``, based on the content of ``result``.
+        """
+        self._client.result(str(result_id)).update(**result)
+                        
+    @retry
+    def delete_result(self, result_id):
+        """
+        Delete a result from its ID ``result_id``.
+        """
+        self._client.result(str(result_id)).delete()
 
