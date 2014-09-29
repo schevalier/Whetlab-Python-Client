@@ -6,10 +6,15 @@
 import sys
 sys.path.extend(['Kayak', '..', 'Kayak/examples'])
 
-import data
 import numpy as np
 import numpy.random as npr
-import kayak
+try:
+    import kayak
+except:
+    print "This examples requires the Python library kayak (https://github.com/HIPS/Kayak)"
+    sys.exit()
+
+import data
 import whetlab
 
 num_folds = 5
