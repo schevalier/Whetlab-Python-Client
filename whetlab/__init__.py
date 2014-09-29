@@ -723,15 +723,18 @@ class Experiment:
         :rtype: dict
         """
 
-        # Sync with the REST server     
+        # Sync with the REST server
         self._sync_with_server()
 
         # Find ID of result with best outcome
         ids = np.array(self._ids_to_outcome_values.keys())
         outcomes = [self._ids_to_outcome_values[i] for i in ids]
-        # Change Nones with infs
-        outcomes = np.array(map(lambda x: x if x is not None else np.inf, outcomes))
+
+        # Clean up nans, infs and Nones
+        outcomes = np.array(map(lambda x: float(x) if x is not None else -np.inf, outcomes))
+        outcomes[np.logical_not(np.isfinite(outcomes))] = -np.inf
         result_id = ids[outcomes.argmax()]
+
         return self._ids_to_param_values[result_id]
     
     @catch_exception

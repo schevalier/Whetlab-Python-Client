@@ -2,6 +2,7 @@ from nose.tools import *
 import whetlab, whetlab.server
 from time import time, sleep
 from nose.tools import with_setup
+import numpy as np
 
 whetlab.RETRY_TIMES = [] # So that it doesn't wait forever for tests that raise errors
 
@@ -462,6 +463,27 @@ class TestExperiment:
         scientist.update({'p1':5.,'p2':5},5)
 
         assert(cmp(scientist.best(),{'p1':5.,'p2':1})==0)
+
+    def test_best_with_nan(self):
+        """ Best returns the best job. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        scientist.update({'p1':1.,'p2':4},1.0)
+        scientist.update({'p1':4.,'p2':2},2.0)
+        scientist.update({'p1':5.,'p2':1},1000)
+        scientist.update({'p1':9.,'p2':9},3)
+        scientist.update({'p1':1.,'p2':1},4)
+        scientist.update({'p1':5.,'p2':5},5)
+        scientist.update({'p1':5.,'p2':2}, np.nan)
+        scientist.update({'p1':5.,'p2':7}, np.nan)
+
+        assert(cmp(scientist.best(),{'p1':5.,'p2':1})==0)
+
 
     def test_pending(self):
         """ Pending returns jobs that have not been updated. """
