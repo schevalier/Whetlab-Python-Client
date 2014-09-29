@@ -53,7 +53,7 @@ def test_delete_experiment():
     scientist.update({'p1':5.,'p2':1},5)
 
     # Delete experiment
-    whetlab.delete_experiment(default_access_token,name)
+    whetlab.delete_experiment(name,default_access_token)
 
     # Should now be possible to create an experiment with the same name
     scientist = whetlab.Experiment(access_token=default_access_token,
@@ -63,17 +63,17 @@ def test_delete_experiment():
                                    outcome=default_outcome)
     
     # Re-deleting it
-    whetlab.delete_experiment(default_access_token,name)
+    whetlab.delete_experiment(name,default_access_token)
 
 
 def setup_function(): 
     try:
-      whetlab.delete_experiment(default_access_token,'test_experiment')
+      whetlab.delete_experiment('test_experiment',default_access_token)
     except:      
       pass
  
 def teardown_function():
-    whetlab.delete_experiment(default_access_token,'test_experiment')
+    whetlab.delete_experiment('test_experiment',default_access_token)
 
 class TestExperiment:
 
@@ -84,14 +84,14 @@ class TestExperiment:
     # with this name
     def setup(self):
       try:
-        whetlab.delete_experiment(default_access_token,self.name)
+        whetlab.delete_experiment(self.name,default_access_token)
       except:      
         pass
 
     # Make sure to clean up any created experiments with this name
     def teardown(self):
       try:
-        whetlab.delete_experiment(default_access_token,self.name)
+        whetlab.delete_experiment(self.name,default_access_token)
       except:      
         pass
 
