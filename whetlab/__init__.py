@@ -236,20 +236,20 @@ validate = {'integer': _validate_integer,
             'enum'   : _validate_enum}
 
 @catch_exception
-def delete_experiment(access_token=None, name='Default name'):
+def delete_experiment(name='Default name', access_token=None):
     """
     Delete the experiment with the given name.  
 
     Important, this cancels the experiment and removes all saved results!
 
-    :param access_token: User access token
-    :type access_token: str
     :param name: Experiment name
     :type name: str
-    """
+    :param access_token: User access token
+    :type access_token: str 
+   """
 
     try:
-        scientist = Experiment(access_token, name, resume=True)
+        scientist = Experiment(name=name, resume=True, access_token=access_token)
     except ValueError:
         raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
     scientist._client.delete_experiment(scientist.experiment_id)
@@ -305,8 +305,6 @@ class Experiment:
     to ``False`` (in which case an error will be raised is an experiment
     with the same name and description is found).    
 
-    :param access_token: Access token for your Whetlab account.
-    :type access_token: str
     :param name: Name of the experiment.
     :type name: str
     :param description: Description of the experiment.
@@ -317,6 +315,8 @@ class Experiment:
     :type outcome: dict
     :param resume: Whether to allow the resuming of a previously executed experiment.
     :type resume: bool
+    :param access_token: Access token for your Whetlab account.
+    :type access_token: str
 
     A Whetlab experiment instance will have the following variables:
 
@@ -330,13 +330,13 @@ class Experiment:
 
     @catch_exception
     def __init__(self,
-                 access_token=None,
                  name='Default name',
                  description='Default description',
                  parameters=None,
                  outcome=None,
                  resume = True,
-                 url=None):
+                 url=None,
+                 access_token=None):
 
         # These are for the client to keep track of things without always 
         # querying the REST server ...
