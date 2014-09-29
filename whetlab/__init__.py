@@ -759,8 +759,10 @@ class Experiment:
         ids = np.array(self._ids_to_outcome_values.keys())
         outcomes_values = np.array(self._ids_to_outcome_values.values())
 
-        # Change Nones with infs
-        outcomes_values = np.array(map(lambda x: x if x is not None else np.inf, outcomes_values))
+        # Clean up nans, infs and Nones
+        outcomes_values = np.array(map(lambda x: float(x) if x is not None else -np.inf, outcomes_values))
+        outcomes_values[np.logical_not(np.isfinite(outcomes_values))] = -np.inf
+
         s = ids.argsort()
         ids = ids[s]
         outcome_values = outcomes_values[s]
