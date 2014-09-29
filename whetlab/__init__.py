@@ -553,6 +553,8 @@ class Experiment:
             
         # Keep track of id / param_values relationship
         self._ids_to_param_values[result_id] = next
+        next = Result(next)
+        next._result_id = result_id
         return next
 
 
@@ -624,7 +626,10 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' not specified")
 
         # Check whether this param_values has a results ID
-        result_id = self._get_id(param_values)
+        if type(param_values) == Result and param_values._result_id is not None:
+            result_id = param_values._result_id
+        else:
+            result_id = self._get_id(param_values)
 
         if result_id is None:
             # If not, then this is a result that was not suggested,
@@ -809,6 +814,15 @@ class Experiment:
         plt.ion()
         plt.show()
 
+
+
+class Result(dict):
+    """
+    Simple class for results, which contain a result ID as metadata.
+    """
+
+    _result_id = None
+    
 
 RETRY_TIMES = [5,30,60,150,300]
 
