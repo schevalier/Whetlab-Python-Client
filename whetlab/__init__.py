@@ -854,6 +854,7 @@ class SimpleREST:
     """
 
     def __init__(self, access_token, url):
+        
 
         # Create REST server client
         options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
@@ -867,6 +868,15 @@ class SimpleREST:
     def create_experiment(self, name, description, settings):
         """
         Create experiment and return its ID.
+
+        :param name: Name of experiment
+        :type name: str
+        :param description: Description of experiment
+        :type description: str
+        :param settings: Specification of the experiment's variables
+        :type settings: list
+        :return: Experiment ID
+        :rtype: int
         """
         
         res = self._client.experiments().create(name=name, 
@@ -878,6 +888,9 @@ class SimpleREST:
     def delete_experiment(self, id):
         """
         Delete experiment with the given ID ``id``.
+
+        :param id: ID of experiment to delete
+        :type ind: int
         """
 
         res = self._client.experiment(str(id)).delete()
@@ -913,28 +926,65 @@ class SimpleREST:
 
     @retry
     def get_experiment_name_and_description(self, id):
+        """
+        Gives the name and description of an experiment, from it's ID
+
+        :param id: Experiment's ID
+        :type id: int
+        :return: Name and description of experiment
+        :rtype: tuple (pair of str)
+        """
         res = self._client.experiments().get({'query':{'id':id}}).body['results'][0]
         return res['name'], res['description']
         
     @retry
     def get_parameters(self, id):
+        """
+        Gives the parameters of an experiment, from it's ID
+
+        :param id: Experiment's ID
+        :type id: int
+        :return: Parameters of the experiment
+        :rtype: dict
+        """
+
         return self._client.settings().get(str(id),{'query':{'page_size':INF_PAGE_SIZE}}).body['results']
 
     @retry
     def get_results(self, id):
+        """
+        Gives the results of an experiment, from it's ID
+
+        :param id: Experiment's ID
+        :type id: int
+        :return: Results of the experiment
+        :rtype: list
+        """
+
         return self._client.results().get({'query': {'experiment':id,'page_size':INF_PAGE_SIZE}}).body['results']
 
     @retry
     def get_suggestion(self, id):
         """
         Get suggestion. Obtained in the form of a result ID.
+
+        :param id: Experiment's ID 
+        :type id: int
+        :return: Suggested result's ID
+        :rtype: int
         """
+
         return  self._client.suggest(str(id)).go().body['id']
 
     @retry
     def get_result(self, result_id):
         """
         Get a result from its ID.
+
+        :param id: Result's ID 
+        :type id: int
+        :return: Description of the result
+        :rtype: dict
         """
         return self._client.result(str(result_id)).get().body
 
@@ -943,6 +993,15 @@ class SimpleREST:
         """
         Add a result with variable assignments from ``variables``,
         to experiment with ID ``id``.
+
+        :param variables: Parameter and outcome values for a result
+        :type variables: dict
+        :param id: experiment's ID 
+        :type id: int
+        :param experiment_description: Description of experiment
+        :type experiment_description: str
+        :return: Result ID of the added result
+        :rtype: int
         """
         return self._client.results().add(variables, id, True, experiment_description).body['id']
 
@@ -950,6 +1009,11 @@ class SimpleREST:
     def update_result(self, result_id, result):
         """
         Update a result from its ID ``result_id``, based on the content of ``result``.
+
+        :param result_id: ID of the result
+        :type result_id: int
+        :param result: Parameter and outcome values of the result
+        :type result: dict
         """
         self._client.result(str(result_id)).update(**result)
                         
@@ -957,6 +1021,9 @@ class SimpleREST:
     def delete_result(self, result_id):
         """
         Delete a result from its ID ``result_id``.
+
+        :param result_id: ID of the result
+        :type result_id: int
         """
         self._client.result(str(result_id)).delete()
 
