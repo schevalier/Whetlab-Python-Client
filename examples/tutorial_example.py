@@ -14,7 +14,7 @@ import whetlab
 
 # First remove this experiment if it already exists.
 try:
-    whetlab.delete_experiment(access_token, "Web page classifier")
+    whetlab.delete_experiment("Web page classifier", access_token)
 except:
     pass
 scientist = whetlab.Experiment(access_token=access_token,

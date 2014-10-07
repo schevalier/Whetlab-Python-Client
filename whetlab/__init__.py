@@ -222,7 +222,7 @@ def _validate_enum(name, properties):
         if validpat.match(option) is None:
             raise ValueError("Invalid enum option: %s "
                 "Options must be a string beginning with a letter and containing only letters, "
-                "numbers, whitespace, hyphens and underscores ([a-zA-Z0-9_-\s])" % (option))        
+                "numbers, hyphens and underscores ([a-zA-Z0-9_-\s])" % (option))        
 
     if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
         raise ValueError("Parameter '%s': options must be of type %s." % (name, python_types['enum']))
@@ -285,12 +285,12 @@ class Experiment:
     ``dict`` should contain the appropriate keys to properly describe
     the parameter:
     
+    * ``'type'``: type of the parameter (default: ``'float'``)
     * ``'min'``: minimum value of the parameter
     * ``'max'``: maximum value of the parameter
+    * ``'size'``: size of parameter (default: ``1``)
     * ``'scale'``: scale to use when exploring parameter values (default: ``'linear'``)
     * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
-    * ``'type'``: type of the parameter (default: ``'float'``)
-    * ``'size'``: size of parameter (default: ``1``)
 
     ``outcome`` should also be a ``dict``, describing the outcome. It
     should have the keys:
@@ -335,7 +335,6 @@ class Experiment:
                  parameters=None,
                  outcome=None,
                  resume = True,
-                 url=None,
                  access_token=None):
 
         # These are for the client to keep track of things without always 
@@ -348,11 +347,10 @@ class Experiment:
         self._param_names_to_setting_ids = {}
 
         config = load_config()
-        if url is None:
-            if config.has_key('api_url'):
-                url = config['api_url']
-            else:
-                url = DEFAULT_API_URL
+        if config.has_key('api_url'):
+            url = config['api_url']
+        else:
+            url = DEFAULT_API_URL
         if access_token is None:
             if config.has_key('access_token'):
                 access_token = config['access_token']
