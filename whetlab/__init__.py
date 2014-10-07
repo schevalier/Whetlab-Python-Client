@@ -236,20 +236,20 @@ validate = {'integer': _validate_integer,
             'enum'   : _validate_enum}
 
 @catch_exception
-def delete_experiment(access_token=None, name='Default name'):
+def delete_experiment(name='Default name', access_token=None):
     """
     Delete the experiment with the given name.  
 
     Important, this cancels the experiment and removes all saved results!
 
-    :param access_token: User access token
-    :type access_token: str
     :param name: Experiment name
     :type name: str
-    """
+    :param access_token: User access token
+    :type access_token: str 
+   """
 
     try:
-        scientist = Experiment(access_token, name, resume=True)
+        scientist = Experiment(name=name, resume=True, access_token=access_token)
     except ValueError:
         raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
     scientist._client.delete_experiment(scientist.experiment_id)
@@ -305,8 +305,6 @@ class Experiment:
     to ``False`` (in which case an error will be raised is an experiment
     with the same name and description is found).    
 
-    :param access_token: Access token for your Whetlab account.
-    :type access_token: str
     :param name: Name of the experiment.
     :type name: str
     :param description: Description of the experiment.
@@ -317,6 +315,8 @@ class Experiment:
     :type outcome: dict
     :param resume: Whether to allow the resuming of a previously executed experiment.
     :type resume: bool
+    :param access_token: Access token for your Whetlab account.
+    :type access_token: str
 
     A Whetlab experiment instance will have the following variables:
 
@@ -330,13 +330,13 @@ class Experiment:
 
     @catch_exception
     def __init__(self,
-                 access_token=None,
                  name='Default name',
                  description='Default description',
                  parameters=None,
                  outcome=None,
                  resume = True,
-                 url=None):
+                 url=None,
+                 access_token=None):
 
         # These are for the client to keep track of things without always 
         # querying the REST server ...
@@ -553,6 +553,8 @@ class Experiment:
             
         # Keep track of id / param_values relationship
         self._ids_to_param_values[result_id] = next
+        next = Result(next)
+        next._result_id = result_id
         return next
 
 
@@ -624,7 +626,10 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' not specified")
 
         # Check whether this param_values has a results ID
-        result_id = self._get_id(param_values)
+        if type(param_values) == Result and param_values._result_id is not None:
+            result_id = param_values._result_id
+        else:
+            result_id = self._get_id(param_values)
 
         if result_id is None:
             # If not, then this is a result that was not suggested,
@@ -723,15 +728,18 @@ class Experiment:
         :rtype: dict
         """
 
-        # Sync with the REST server     
+        # Sync with the REST server
         self._sync_with_server()
 
         # Find ID of result with best outcome
         ids = np.array(self._ids_to_outcome_values.keys())
         outcomes = [self._ids_to_outcome_values[i] for i in ids]
-        # Change Nones with infs
-        outcomes = np.array(map(lambda x: x if x is not None else np.inf, outcomes))
+
+        # Clean up nans, infs and Nones
+        outcomes = np.array(map(lambda x: float(x) if x is not None else -np.inf, outcomes))
+        outcomes[np.logical_not(np.isfinite(outcomes))] = -np.inf
         result_id = ids[outcomes.argmax()]
+
         return self._ids_to_param_values[result_id]
     
     @catch_exception
@@ -751,8 +759,10 @@ class Experiment:
         ids = np.array(self._ids_to_outcome_values.keys())
         outcomes_values = np.array(self._ids_to_outcome_values.values())
 
-        # Change Nones with infs
-        outcomes_values = np.array(map(lambda x: x if x is not None else np.inf, outcomes_values))
+        # Clean up nans, infs and Nones
+        outcomes_values = np.array(map(lambda x: float(x) if x is not None else -np.inf, outcomes_values))
+        outcomes_values[np.logical_not(np.isfinite(outcomes_values))] = -np.inf
+
         s = ids.argsort()
         ids = ids[s]
         outcome_values = outcomes_values[s]
@@ -807,6 +817,15 @@ class Experiment:
         plt.show()
 
 
+
+class Result(dict):
+    """
+    Simple class for results, which contain a result ID as metadata.
+    """
+
+    _result_id = None
+    
+
 RETRY_TIMES = [5,30,60,150,300]
 
 def retry(f):
@@ -835,6 +854,7 @@ class SimpleREST:
     """
 
     def __init__(self, access_token, url):
+        
 
         # Create REST server client
         options = ({'headers' : {'Authorization':'Bearer ' + access_token}, 
@@ -848,6 +868,15 @@ class SimpleREST:
     def create_experiment(self, name, description, settings):
         """
         Create experiment and return its ID.
+
+        :param name: Name of experiment
+        :type name: str
+        :param description: Description of experiment
+        :type description: str
+        :param settings: Specification of the experiment's variables
+        :type settings: list
+        :return: Experiment ID
+        :rtype: int
         """
         
         res = self._client.experiments().create(name=name, 
@@ -859,6 +888,9 @@ class SimpleREST:
     def delete_experiment(self, id):
         """
         Delete experiment with the given ID ``id``.
+
+        :param id: ID of experiment to delete
+        :type ind: int
         """
 
         res = self._client.experiment(str(id)).delete()
@@ -894,28 +926,65 @@ class SimpleREST:
 
     @retry
     def get_experiment_name_and_description(self, id):
+        """
+        Gives the name and description of an experiment, from it's ID
+
+        :param id: Experiment's ID
+        :type id: int
+        :return: Name and description of experiment
+        :rtype: tuple (pair of str)
+        """
         res = self._client.experiments().get({'query':{'id':id}}).body['results'][0]
         return res['name'], res['description']
         
     @retry
     def get_parameters(self, id):
+        """
+        Gives the parameters of an experiment, from it's ID
+
+        :param id: Experiment's ID
+        :type id: int
+        :return: Parameters of the experiment
+        :rtype: dict
+        """
+
         return self._client.settings().get(str(id),{'query':{'page_size':INF_PAGE_SIZE}}).body['results']
 
     @retry
     def get_results(self, id):
+        """
+        Gives the results of an experiment, from it's ID
+
+        :param id: Experiment's ID
+        :type id: int
+        :return: Results of the experiment
+        :rtype: list
+        """
+
         return self._client.results().get({'query': {'experiment':id,'page_size':INF_PAGE_SIZE}}).body['results']
 
     @retry
     def get_suggestion(self, id):
         """
         Get suggestion. Obtained in the form of a result ID.
+
+        :param id: Experiment's ID 
+        :type id: int
+        :return: Suggested result's ID
+        :rtype: int
         """
+
         return  self._client.suggest(str(id)).go().body['id']
 
     @retry
     def get_result(self, result_id):
         """
         Get a result from its ID.
+
+        :param id: Result's ID 
+        :type id: int
+        :return: Description of the result
+        :rtype: dict
         """
         return self._client.result(str(result_id)).get().body
 
@@ -924,6 +993,15 @@ class SimpleREST:
         """
         Add a result with variable assignments from ``variables``,
         to experiment with ID ``id``.
+
+        :param variables: Parameter and outcome values for a result
+        :type variables: dict
+        :param id: experiment's ID 
+        :type id: int
+        :param experiment_description: Description of experiment
+        :type experiment_description: str
+        :return: Result ID of the added result
+        :rtype: int
         """
         return self._client.results().add(variables, id, True, experiment_description).body['id']
 
@@ -931,6 +1009,11 @@ class SimpleREST:
     def update_result(self, result_id, result):
         """
         Update a result from its ID ``result_id``, based on the content of ``result``.
+
+        :param result_id: ID of the result
+        :type result_id: int
+        :param result: Parameter and outcome values of the result
+        :type result: dict
         """
         self._client.result(str(result_id)).update(**result)
                         
@@ -938,6 +1021,9 @@ class SimpleREST:
     def delete_result(self, result_id):
         """
         Delete a result from its ID ``result_id``.
+
+        :param result_id: ID of the result
+        :type result_id: int
         """
         self._client.result(str(result_id)).delete()
 

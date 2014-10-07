@@ -2,6 +2,7 @@ from nose.tools import *
 import whetlab, whetlab.server
 from time import time, sleep
 from nose.tools import with_setup
+import numpy as np
 
 whetlab.RETRY_TIMES = [] # So that it doesn't wait forever for tests that raise errors
 
@@ -52,7 +53,7 @@ def test_delete_experiment():
     scientist.update({'p1':5.,'p2':1},5)
 
     # Delete experiment
-    whetlab.delete_experiment(default_access_token,name)
+    whetlab.delete_experiment(name,default_access_token)
 
     # Should now be possible to create an experiment with the same name
     scientist = whetlab.Experiment(access_token=default_access_token,
@@ -62,17 +63,17 @@ def test_delete_experiment():
                                    outcome=default_outcome)
     
     # Re-deleting it
-    whetlab.delete_experiment(default_access_token,name)
+    whetlab.delete_experiment(name,default_access_token)
 
 
 def setup_function(): 
     try:
-      whetlab.delete_experiment(default_access_token,'test_experiment')
+      whetlab.delete_experiment('test_experiment',default_access_token)
     except:      
       pass
  
 def teardown_function():
-    whetlab.delete_experiment(default_access_token,'test_experiment')
+    whetlab.delete_experiment('test_experiment',default_access_token)
 
 class TestExperiment:
 
@@ -83,14 +84,14 @@ class TestExperiment:
     # with this name
     def setup(self):
       try:
-        whetlab.delete_experiment(default_access_token,self.name)
+        whetlab.delete_experiment(self.name,default_access_token)
       except:      
         pass
 
     # Make sure to clean up any created experiments with this name
     def teardown(self):
       try:
-        whetlab.delete_experiment(default_access_token,self.name)
+        whetlab.delete_experiment(self.name,default_access_token)
       except:      
         pass
 
@@ -398,21 +399,6 @@ class TestExperiment:
         assert( cmp(scientist._ids_to_param_values.values()[0],{'p1':5.1,'p2':5}) == 0 )
         assert( cmp(scientist._ids_to_outcome_values.values()[0],20) == 0 )
 
-    def test_update_none(self):
-        """ Update with a None outcome works and adds to pending results. """
-
-        scientist = whetlab.Experiment(access_token=default_access_token,
-                                       name=self.name,
-                                       description=default_description,
-                                       parameters=default_parameters,
-                                       outcome=default_outcome)
-
-        scientist.update({'p1':5.1,'p2':5},None)
-
-        # Make sure result was added to pending
-        assert( len(scientist.pending()) == 1 )
-        assert( cmp(scientist.pending()[0],{'p1':5.1,'p2':5}) == 0 )
-
     def test_suggest_twice(self):
         """ Calling suggest twice returns two different jobs. """
 
@@ -477,6 +463,27 @@ class TestExperiment:
         scientist.update({'p1':5.,'p2':5},5)
 
         assert(cmp(scientist.best(),{'p1':5.,'p2':1})==0)
+
+    def test_best_with_nan(self):
+        """ Best returns the best job. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        scientist.update({'p1':1.,'p2':4},1.0)
+        scientist.update({'p1':4.,'p2':2},2.0)
+        scientist.update({'p1':5.,'p2':1},1000)
+        scientist.update({'p1':9.,'p2':9},3)
+        scientist.update({'p1':1.,'p2':1},4)
+        scientist.update({'p1':5.,'p2':5},5)
+        scientist.update({'p1':5.,'p2':2}, np.nan)
+        scientist.update({'p1':5.,'p2':7}, np.nan)
+
+        assert(cmp(scientist.best(),{'p1':5.,'p2':1})==0)
+
 
     def test_pending(self):
         """ Pending returns jobs that have not been updated. """
