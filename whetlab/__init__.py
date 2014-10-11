@@ -29,7 +29,7 @@ INF_PAGE_SIZE = 1000000
 
 DEFAULT_API_URL = 'https://www.whetlab.com'
 
-supported_properties = set(['min','max','size','scale','units','type','options'])
+supported_properties = set(['min','max','size','type','options'])
 required_properties = {
     'float':set(['min','max']),
     'integer':set(['min','max']),
@@ -59,7 +59,7 @@ legal_values = {
 
 python_types = {'float':float,'integer':int,'enum':str}
 
-outcome_supported_properties = set(['units','type','name'])
+outcome_supported_properties = set(['name'])
 outcome_required_properties = set(['name'])
 outcome_default_values = {'min':-100.,
               'max':100.,
@@ -286,18 +286,15 @@ class Experiment:
     the parameter:
     
     * ``'type'``: type of the parameter (default: ``'float'``)
-    * ``'min'``: minimum value of the parameter
-    * ``'max'``: maximum value of the parameter
+    * ``'min'``: minimum value of the parameter (only for types ``float`` and ``int``)
+    * ``'max'``: maximum value of the parameter (only for types ``float`` and ``int``)
+    * ``'options'``: list of strings, of the possible values that can take an ``enum`` parameter (only for type ``enum``)
     * ``'size'``: size of parameter (default: ``1``)
-    * ``'scale'``: scale to use when exploring parameter values (default: ``'linear'``)
-    * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
 
     ``outcome`` should also be a ``dict``, describing the outcome. It
-    should have the keys:
+    should have the key:
 
     * ``'name'``: name (``str``) for the outcome being optimized
-    * ``'type'``: type of the parameter, either ``'float'``, ``'integer'`` or  ``'enum'`` (default: ``'float'``)
-    * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
 
     If ``name`` and ``description`` match a previously created experiment,
     that experiment will be resumed (in this case, ``parameters`` and ``outcoume`` are ignored).
