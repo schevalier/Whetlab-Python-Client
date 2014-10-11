@@ -296,7 +296,7 @@ class Experiment:
 
     * ``'name'``: name (``str``) for the outcome being optimized
 
-    If ``name`` and ``description`` match a previously created experiment,
+    If ``name`` match a previously created experiment,
     that experiment will be resumed (in this case, ``parameters`` and ``outcoume`` are ignored).
     This behavior can be avoided by setting the argument ``resume``
     to ``False`` (in which case an error will be raised is an experiment
@@ -304,15 +304,15 @@ class Experiment:
 
     :param name: Name of the experiment.
     :type name: str
-    :param description: Description of the experiment.
+    :param description: Description of the experiment (default: ``''``).
     :type description: str
-    :param parameters: Parameters to be tuned during the experiment.
+    :param parameters: Parameters to be tuned during the experiment (default: ``None``, appropriate when resuming).
     :type parameters: dict
-    :param outcome: Description of the outcome to maximize.
+    :param outcome: Description of the outcome to maximize (default: ``None``, appropriate when resuming).
     :type outcome: dict
-    :param resume: Whether to allow the resuming of a previously executed experiment.
+    :param resume: Whether to allow the resuming of a previously executed experiment. If ``True`` and experiment's name matches an existing experiment, ``parameters`` and ``outcome`` are ignored (default: ``True``).
     :type resume: bool
-    :param access_token: Access token for your Whetlab account.
+    :param access_token: Access token for your Whetlab account. If ``None``, then is read from whetlab configuration file (default: ``None``).
     :type access_token: str
 
     A Whetlab experiment instance will have the following variables:
@@ -327,8 +327,8 @@ class Experiment:
 
     @catch_exception
     def __init__(self,
-                 name='Default name',
-                 description='Default description',
+                 name,
+                 description='',
                  parameters=None,
                  outcome=None,
                  resume = True,

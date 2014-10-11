@@ -7,7 +7,7 @@ import numpy as np
 # Define parameters to optimize
 parameters = { 'n_estimators':{'type':'integer', 'min':2, 'max':100, 'size':1},
                'max_depth':{'type':'integer', 'min':1, 'max':20, 'size':1}}
-outcome = {'name':'Classification accuracy', 'type':'float'}
+outcome = {'name':'Classification accuracy'}
 name = 'Random Forest'
 description = 'Training a random forest on the MNIST dataset using the sklearn library'
 access_token = None # PUT VALID ACCESS TOKEN HERE OR IN YOUR ~/.whetlab FILE
