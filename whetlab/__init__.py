@@ -425,20 +425,20 @@ class Experiment:
                 raise ValueError("Outcome name should not match any of the parameter names")
 
             # Check if all properties are supported
-            for property in param.iterkeys():
-                if property not in outcome_supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
+            for prop in param.iterkeys():
+                if prop not in outcome_supported_properties : raise ValueError("Parameter '" +outcome['name']+ "': property '" + prop + "' not supported")
             
             # Check if required properties are present
-            for property in outcome_required_properties:
-                if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+            for prop in outcome_required_properties:
+                if prop not in param : raise ValueError("Parameter '" +key+ "': property '" + prop + "' must be defined")
 
             # Add default parameters if not present
-            for property, default in outcome_default_values.iteritems():
-                if property not in param: param[property] = default
+            for prop, default in outcome_default_values.iteritems():
+                if prop not in param: param[prop] = default
             
             # Check compatibility of properties
-            for property, legals in outcome_legal_values.iteritems():
-                if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+            for prop, legals in outcome_legal_values.iteritems():
+                if param[prop] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + prop +"'")
 
             param['isOutput'] = True
             settings += [param]
