@@ -11,7 +11,7 @@ parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
 access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 name = 'Categorical Braninhoo'
 description = 'Optimize the categorical braninhoo optimization benchmark'
-outcome = {'name':'Negative Categorical Braninhoo output', 'type':'float'}
+outcome = {'name':'Negative Categorical Braninhoo output'}
 scientist = whetlab.Experiment(name=name, access_token=access_token, description=description, parameters=parameters, outcome=outcome)
 
 # Braninhoo function

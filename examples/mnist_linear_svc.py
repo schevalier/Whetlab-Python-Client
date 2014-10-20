@@ -8,7 +8,7 @@ import numpy as np
 
 # Define parameters to optimize
 parameters = { 'C':{'type':'float', 'min':1.0, 'max':1000.0, 'size':1}}
-outcome = {'name':'Classification accuracy', 'type':'float'}
+outcome = {'name':'Classification accuracy'}
 name = 'SVM on MNIST'
 description = 'Training an SVM using the sklearn library on the MNIST dataset'
 access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.

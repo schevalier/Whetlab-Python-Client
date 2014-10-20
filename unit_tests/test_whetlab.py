@@ -11,7 +11,7 @@ default_access_token = None
 default_description = ''
 default_parameters = { 'p1':{'type':'float', 'min':0, 'max':10.0, 'size':1},
                             'p2':{'type':'integer', 'min':0, 'max':10, 'size':1}}
-default_outcome = {'name':'Dummy outcome', 'type':'float'}
+default_outcome = {'name':'Dummy outcome'}
 
 last_created_experiment = ""
 

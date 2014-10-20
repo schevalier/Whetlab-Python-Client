@@ -29,7 +29,7 @@ INF_PAGE_SIZE = 1000000
 
 DEFAULT_API_URL = 'https://www.whetlab.com'
 
-supported_properties = set(['min','max','size','scale','units','type','options'])
+supported_properties = set(['min','max','size','type','options'])
 required_properties = {
     'float':set(['min','max']),
     'integer':set(['min','max']),
@@ -59,7 +59,7 @@ legal_values = {
 
 python_types = {'float':float,'integer':int,'enum':str}
 
-outcome_supported_properties = set(['units','type','name'])
+outcome_supported_properties = set(['name'])
 outcome_required_properties = set(['name'])
 outcome_default_values = {'min':-100.,
               'max':100.,
@@ -222,7 +222,7 @@ def _validate_enum(name, properties):
         if validpat.match(option) is None:
             raise ValueError("Invalid enum option: %s "
                 "Options must be a string beginning with a letter and containing only letters, "
-                "numbers, whitespace, hyphens and underscores ([a-zA-Z0-9_-\s])" % (option))        
+                "numbers, hyphens and underscores ([a-zA-Z0-9_-\s])" % (option))        
 
     if not all([isinstance(c,python_types['enum']) for c in properties['options']]):
         raise ValueError("Parameter '%s': options must be of type %s." % (name, python_types['enum']))
@@ -285,21 +285,18 @@ class Experiment:
     ``dict`` should contain the appropriate keys to properly describe
     the parameter:
     
-    * ``'min'``: minimum value of the parameter
-    * ``'max'``: maximum value of the parameter
-    * ``'scale'``: scale to use when exploring parameter values (default: ``'linear'``)
-    * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
     * ``'type'``: type of the parameter (default: ``'float'``)
+    * ``'min'``: minimum value of the parameter (only for types ``float`` and ``int``)
+    * ``'max'``: maximum value of the parameter (only for types ``float`` and ``int``)
+    * ``'options'``: list of strings, of the possible values that can take an ``enum`` parameter (only for type ``enum``)
     * ``'size'``: size of parameter (default: ``1``)
 
     ``outcome`` should also be a ``dict``, describing the outcome. It
-    should have the keys:
+    should have the key:
 
     * ``'name'``: name (``str``) for the outcome being optimized
-    * ``'type'``: type of the parameter, either ``'float'``, ``'integer'`` or  ``'enum'`` (default: ``'float'``)
-    * ``'units'``: units (``str``) in which the parameter is measured (default: ``''``)
 
-    If ``name`` and ``description`` match a previously created experiment,
+    If ``name`` match a previously created experiment,
     that experiment will be resumed (in this case, ``parameters`` and ``outcoume`` are ignored).
     This behavior can be avoided by setting the argument ``resume``
     to ``False`` (in which case an error will be raised is an experiment
@@ -307,15 +304,15 @@ class Experiment:
 
     :param name: Name of the experiment.
     :type name: str
-    :param description: Description of the experiment.
+    :param description: Description of the experiment (default: ``''``).
     :type description: str
-    :param parameters: Parameters to be tuned during the experiment.
+    :param parameters: Parameters to be tuned during the experiment (default: ``None``, appropriate when resuming).
     :type parameters: dict
-    :param outcome: Description of the outcome to maximize.
+    :param outcome: Description of the outcome to maximize (default: ``None``, appropriate when resuming).
     :type outcome: dict
-    :param resume: Whether to allow the resuming of a previously executed experiment.
+    :param resume: Whether to allow the resuming of a previously executed experiment. If ``True`` and experiment's name matches an existing experiment, ``parameters`` and ``outcome`` are ignored (default: ``True``).
     :type resume: bool
-    :param access_token: Access token for your Whetlab account.
+    :param access_token: Access token for your Whetlab account. If ``None``, then is read from whetlab configuration file (default: ``None``).
     :type access_token: str
 
     A Whetlab experiment instance will have the following variables:
@@ -330,12 +327,11 @@ class Experiment:
 
     @catch_exception
     def __init__(self,
-                 name='Default name',
-                 description='Default description',
+                 name,
+                 description='',
                  parameters=None,
                  outcome=None,
                  resume = True,
-                 url=None,
                  access_token=None):
 
         # These are for the client to keep track of things without always 
@@ -348,11 +344,10 @@ class Experiment:
         self._param_names_to_setting_ids = {}
 
         config = load_config()
-        if url is None:
-            if config.has_key('api_url'):
-                url = config['api_url']
-            else:
-                url = DEFAULT_API_URL
+        if config.has_key('api_url'):
+            url = config['api_url']
+        else:
+            url = DEFAULT_API_URL
         if access_token is None:
             if config.has_key('access_token'):
                 access_token = config['access_token']
@@ -430,20 +425,20 @@ class Experiment:
                 raise ValueError("Outcome name should not match any of the parameter names")
 
             # Check if all properties are supported
-            for property in param.iterkeys():
-                if property not in outcome_supported_properties : raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
+            for prop in param.iterkeys():
+                if prop not in outcome_supported_properties : raise ValueError("Parameter '" +outcome['name']+ "': property '" + prop + "' not supported")
             
             # Check if required properties are present
-            for property in outcome_required_properties:
-                if property not in param : raise ValueError("Parameter '" +key+ "': property '" + property + "' must be defined")
+            for prop in outcome_required_properties:
+                if prop not in param : raise ValueError("Parameter '" +key+ "': property '" + prop + "' must be defined")
 
             # Add default parameters if not present
-            for property, default in outcome_default_values.iteritems():
-                if property not in param: param[property] = default
+            for prop, default in outcome_default_values.iteritems():
+                if prop not in param: param[prop] = default
             
             # Check compatibility of properties
-            for property, legals in outcome_legal_values.iteritems():
-                if param[property] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + property+"'")
+            for prop, legals in outcome_legal_values.iteritems():
+                if param[prop] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + prop +"'")
 
             param['isOutput'] = True
             settings += [param]

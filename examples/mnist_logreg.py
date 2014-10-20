@@ -158,7 +158,7 @@ def main():
 
     name = 'MNIST: Logistic Regression'
     description = 'Use logistic regression on the MNIST data.'
-    outcome = {'name':'Cross-validation accuracy', 'type':'float'}
+    outcome = {'name':'Cross-validation accuracy'}
     scientist = whetlab.Experiment(name=name,
                                    description=description,
                                    parameters=parameters,

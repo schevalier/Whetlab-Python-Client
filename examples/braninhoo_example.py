@@ -11,7 +11,7 @@ access_token = None # Either replace this with your access token or put it in yo
 
 name = 'Braninhoo'
 description = 'Optimize the braninhoo optimization benchmark'
-outcome = {'name':'Negative Braninhoo output', 'type':'float'}
+outcome = {'name':'Negative Braninhoo output'}
 scientist = whetlab.Experiment(name=name, access_token=access_token, description=description,
                                parameters=parameters, outcome=outcome)
 
