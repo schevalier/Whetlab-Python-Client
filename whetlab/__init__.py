@@ -9,6 +9,7 @@ import time
 import re
 import functools
 import requests
+from whetlab.server.error.client_error import *
 
 def catch_exception(f):
     @functools.wraps(f)
@@ -833,8 +834,16 @@ def retry(f):
                 if i == len(RETRY_TIMES):
                     raise e
                 if i >=3 : # Only warn starting at the 2nd retry
-                    print 'WARNING: experiencing problems communicating with the server. Will try again in',RETRY_TIMES[i],'seconds.'
+                    print 'WARNING: experiencing problems communicating with the server. Will try again in ',RETRY_TIMES[i],' seconds.'
                 time.sleep(RETRY_TIMES[i])
+            except ClientError as e: # An explicit error was returned by the server
+                if e.code == 503: # Temporary server maintenance
+                    retry_time = np.round(np.random.rand()*2*30)
+                    i -= 1
+                    print 'WARNING: Server is undergoing temporary maintenance. Will try again in %d seconds.' % (retry_time)
+                    time.sleep(retry_time)
+                else:
+                    raise
             except:
                 raise 
                        
