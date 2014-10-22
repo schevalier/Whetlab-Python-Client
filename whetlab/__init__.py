@@ -842,6 +842,12 @@ def retry(f):
                     i -= 1
                     print 'WARNING: Server is undergoing temporary maintenance. Will try again in %d seconds.' % (retry_time)
                     time.sleep(retry_time)
+                elif e.code > 500:
+                    if i == len(RETRY_TIMES):
+                        raise e
+                    if i >=3 : # Only warn starting at the 2nd retry
+                        print 'WARNING: experiencing problems communicating with the server. Will try again in ',RETRY_TIMES[i],' seconds.'
+                    time.sleep(RETRY_TIMES[i])
                 else:
                     raise
             except:
