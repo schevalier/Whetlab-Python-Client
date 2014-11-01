@@ -14,7 +14,7 @@ parameters = { 'f1' : {'type':'float','min':-1.5,'max':10.1,'size':1},
 access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 name = 'Mixed Type Example'
 description = 'This function is just noisy, but has a lot of interesting input types.'
-outcome = {'name':'Garbage', 'type':'float'}
+outcome = {'name':'Garbage'}
 scientist = whetlab.Experiment(name=name, access_token=access_token, description=description, parameters=parameters, outcome=outcome)
 
 # Braninhoo function
