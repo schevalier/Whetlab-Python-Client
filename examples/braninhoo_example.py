@@ -9,7 +9,7 @@ parameters = { 'X' : {'type':'float','min':0,'max':15,'size':1},
                'Y' : {'type':'float','min':-5,'max':10,'size':1}}
 access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 
-name = 'Braninhoo'
+name = 'Braninhoo Python'
 description = 'Optimize the braninhoo optimization benchmark'
 outcome = {'name':'Negative Braninhoo output'}
 scientist = whetlab.Experiment(name=name, access_token=access_token, description=description,
@@ -30,6 +30,6 @@ for i in range(50):
     outcome = -braninhoo(**job)
 
     # Inform scientist about the outcome
-    scientist.update(job, outcome)
-    scientist.report()
+    #scientist.update(job, outcome)
+    #scientist.report()
 
