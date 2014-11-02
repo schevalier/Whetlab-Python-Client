@@ -1,10 +1,9 @@
 # In this example we optimize a logistic regression on the popular MNIST digit recognition benchmark using the 'KAYAK'
 # deep learning code base.
-# To run this example, first get KAYAK from https://github.com/HIPS/Kayak. You can just run the command:
-# 'git clone https://github.com/HIPS/Kayak.git' from this directory.
+# To run this example, first get KAYAK from https://github.com/HIPS/Kayak. Then add Kayak to your PYTHONPATH or
+# install it by navigating into kayak and running `python setup.py install`.
 
 import sys
-sys.path.extend(['Kayak', '..', 'Kayak/examples'])
 
 import numpy as np
 import numpy.random as npr
@@ -29,12 +28,15 @@ def train(inputs, targets, batch_size, learn_rate, momentum, l1_weight, l2_weigh
     X    = kayak.Inputs(inputs, batcher)
     T    = kayak.Targets(targets, batcher)
 
+    # Put some dropout regularization on the inputs
+    H    = kayak.Dropout(X, dropout)
+
     # Weights and biases, with random initializations.
     W    = kayak.Parameter( 0.1*npr.randn( inputs.shape[1], 10 ))
     B    = kayak.Parameter( 0.1*npr.randn(1,10) )
 
     # Nothing fancy here: inputs times weights, plus bias, then softmax.
-    Y    = kayak.LogSoftMax( kayak.ElemAdd( kayak.MatMult(kayak.Dropout(X, dropout), W), B ) )
+    Y    = kayak.LogSoftMax( kayak.ElemAdd( kayak.MatMult(H, W), B ) )
 
     # The training loss is negative multinomial log likelihood.
     loss = kayak.MatAdd(kayak.MatSum(kayak.LogMultinomialLoss(Y, T)),
@@ -42,24 +44,26 @@ def train(inputs, targets, batch_size, learn_rate, momentum, l1_weight, l2_weigh
                         kayak.L1Norm(W, l1_weight))
 
     # Use momentum for the gradient-based optimization.
-    mom_grad_W = np.zeros(W.shape())
+    mom_grad_W = np.zeros(W.shape)
 
     best_loss  = np.inf
     best_epoch = -1
 
     # Loop over epochs.
-    for epoch in xrange(500):
+    for epoch in xrange(100):
 
-        # Track the total loss and the overall gradient.
+        # Track the total loss.
         total_loss   = 0.0
-        total_grad_W = np.zeros(W.shape())
 
         # Loop over batches -- using batcher as iterator.
         for batch in batcher:
 
+            # Draw new random dropouts
+            H.draw_new_mask()
+
             # Compute the loss of this minibatch by asking the Kayak
             # object for its value and giving it reset=True.
-            total_loss += loss.value(True)
+            total_loss += loss.value
 
             # Now ask the loss for its gradient in terms of the
             # weights and the biases -- the two things we're trying to
@@ -68,16 +72,18 @@ def train(inputs, targets, batch_size, learn_rate, momentum, l1_weight, l2_weigh
             grad_B = loss.grad(B)
             
             # Use momentum on the weight gradient.
-            mom_grad_W = momentum*mom_grad_W + (1.0-momentum)*grad_W
+            mom_grad_W *= momentum
+            mom_grad_W += (1.0-momentum)*grad_W
 
             # Now make the actual parameter updates.
-            W.add( -learn_rate * mom_grad_W )
-            B.add( -learn_rate * grad_B )
+            W.value -= learn_rate * mom_grad_W
+            B.value -= learn_rate * grad_B
 
-            # Keep track of the gradient to see if we're converging.
-            total_grad_W += grad_W
+        print "Epoch: %d, total loss: %f" % (epoch, total_loss)
 
-        print epoch, total_loss, np.sum(total_grad_W**2)
+        if not np.isfinite(total_loss):
+            print "Training diverged. Returning constraint violation."
+            break
 
         if total_loss < best_loss:
             best_epoch = epoch
@@ -88,14 +94,16 @@ def train(inputs, targets, batch_size, learn_rate, momentum, l1_weight, l2_weigh
 
     # After we've trained, we return a sugary little function handle
     # that makes things easy.  Basically, what we're doing here is
-    # handing the output object (not the loss!) a dictionary where the
-    # key is the Kayak input object 'X' (that is the features being
-    # used here for logistic regression) and the value in that
-    # dictionary is being determined by the argument to the lambda
-    # expression.  The point here is that we wind up with a function
+    # simply replacing the inputs in the above defined graph and then
+    # running through it to produce the outputs.
+    # The point here is that we wind up with a function
     # handle the can be called with a numpy object and it produces the
     # target values for novel data, using the parameters we just learned.
-    return lambda x: Y.value(True, inputs={ X: x })
+    def predict(x):
+        X.value = x
+        H.reinstate_units()
+        return Y.value
+    return predict
 
 def evaluate(batch_size, log10_lr, momentum, log10_l1, log10_l2, dropout, improvement_thresh):
 
