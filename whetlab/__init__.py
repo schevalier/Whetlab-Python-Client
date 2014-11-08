@@ -553,9 +553,95 @@ class Experiment:
         next._result_id = result_id
         return next
 
+    @catch_exception
+    def get_by_result_id(self, id):
+        """
+        Return the parameter values corresponding to the given unique job/result ``id``.
+        If no result matches, return ``None``.
+
+        :param id: Unique result identifier
+        :type id: int       
+        :return: ID of the corresponding result. If not match, None is returned.
+        :rtype: dict or None
+        """
+
+        if id in self._ids_to_param_values:
+            return Result(self._ids_to_param_values[id])
+
+        else:
+            self._sync_with_server()
+            if id in self._ids_to_param_values:
+                return Result(self._ids_to_param_values[id])
+            else:
+                return None
 
     @catch_exception
-    def _get_id(self,param_values):
+    def cancel_by_result_id(self, id):
+        """
+        Delete the experiment indexed by the given unique job/result ``id``.
+
+        :param id: Unique result identifier
+        :type id: int
+        """
+
+        self._client.delete_result(id)
+
+    @catch_exception
+    def update_by_result_id(self, result_id, outcome_val):
+        """
+        Update the experiment with the outcome value indexed by the given unique job/result ``id``.
+
+        :param result_id: Unique result identifier
+        :type id: int
+        :param outcome_val: Outcome value associated with this result
+        :type outcome_val: float
+        """
+
+        if outcome_val is not None:
+            outcome_val = float(outcome_val)
+
+        result_id = int(result_id)
+
+        result = self._client.get_result(result_id)
+        if result is None or 'variables' not in result:
+            raise ValueError("Job with result_id '" + str(result_id) + "' not found.")
+
+        for var in result['variables']:
+            if var['name'] == self.outcome_name:
+                var['value'] = outcome_val
+                break # Assume only one outcome per experiment!
+        self._client.update_result(result_id,result)
+        self._ids_to_outcome_values[result_id] = outcome_val     
+
+    @catch_exception
+    def get_id(self, param_values):
+        """
+        Return the result ID corresponding to the given ``param_values``.
+        If no result matches, return ``None``.
+
+        :param param_values: Values of parameters.
+        :type param_values: dict       
+        :return: ID of the corresponding result. If not match, None is returned.
+        :rtype: int or None
+        """
+
+        param_values = Result(param_values)
+        if param_values._result_id is not None:
+            return param_values._result_id
+
+        # Sync with the REST server
+        self._sync_with_server()
+
+        id = None
+
+        for k,v in self._ids_to_param_values.iteritems():
+            if cmp(v,param_values) == 0:
+                id = k
+
+        return id
+
+    @catch_exception
+    def get_all_results(self, param_values):
         """
         Return the result ID corresponding to the given ``param_values``.
         If no result matches, return ``None``.
@@ -625,7 +711,7 @@ class Experiment:
         if type(param_values) == Result and param_values._result_id is not None:
             result_id = param_values._result_id
         else:
-            result_id = self._get_id(param_values)
+            result_id = self.get_id(param_values)
 
         if result_id is None:
             # If not, then this is a result that was not suggested,
@@ -672,7 +758,7 @@ class Experiment:
         """
 
         # Check whether this param_values has a results ID
-        id = self._get_id(param_values)
+        id = self.get_id(param_values)
 
         if id is not None:
             # Delete from internals

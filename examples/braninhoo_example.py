@@ -30,6 +30,5 @@ for i in range(50):
     outcome = -braninhoo(**job)
 
     # Inform scientist about the outcome
-    #scientist.update(job, outcome)
-    #scientist.report()
+    scientist.update(job, outcome)
 

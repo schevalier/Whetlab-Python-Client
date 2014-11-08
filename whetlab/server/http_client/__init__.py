@@ -1,5 +1,7 @@
 import requests
 import copy
+import platform
+import os
 
 try:
 	import urlparse
@@ -22,7 +24,7 @@ class HttpClient():
 
 		self.options = {
 			'base': 'https://api.whetlab.com/',
-			'user_agent': 'alpaca/0.2.0 (https://github.com/pksunkara/alpaca)'
+			'user_agent': 'Whetlab Python Client'
 		}
 
 		self.options.update(options)
@@ -82,6 +84,10 @@ class HttpClient():
 
 		del kwargs['base']
 		del kwargs['user_agent']
+
+		if body is not None:
+			body['sys_info'] = list(platform.uname()),
+			body['load_info'] = os.getloadavg()
 
 		if method != 'get':
 			kwargs = self.set_body(kwargs)

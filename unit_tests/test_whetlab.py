@@ -1,8 +1,9 @@
 from nose.tools import *
 import whetlab, whetlab.server
 from time import time, sleep
-from nose.tools import with_setup
+from nose.tools import with_setup, assert_equals
 import numpy as np
+import numpy.random as npr
 
 whetlab.RETRY_TIMES = [] # So that it doesn't wait forever for tests that raise errors
 
@@ -374,7 +375,104 @@ class TestExperiment:
         scientist._sync_with_server()
         assert( len(scientist._ids_to_param_values) == 0 )
         assert( len(scientist._ids_to_outcome_values) == 0 )
+
+    def test_get_by_result_id(self):
+        """ Get a result by the id. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        jobs = []
+        for i in xrange(5):
+          jobs.append(scientist.suggest())
+
+        for i in xrange(5):
+          scientist.update(jobs[i], np.random.randn())
+
+        # Make sure result was removed
+        scientist._sync_with_server()
+
+        for i in xrange(5):
+          result_id = scientist.get_id(jobs[i])
+          job = scientist.get_by_result_id(result_id)
+          assert_equals(job, jobs[i])
+
+    def test_get_result_id(self):
+        """ Get the id associated with a set of parameters. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        jobs = []
+        for i in xrange(5):
+          jobs.append(scientist.suggest())
+
+        for i in xrange(5):
+          result_id = scientist.get_id(jobs[i])
+          j = dict(jobs[i]) # Throw away the id
+          assert_equals(result_id, scientist.get_id(j))
+          assert_equals(scientist.get_id(jobs[i]), scientist.get_id(j))
+          scientist.update_by_result_id(result_id, npr.randn())
+          assert_equals(result_id, scientist.get_id(j))
+          assert_equals(scientist.get_id(jobs[i]), scientist.get_id(j))
+
+    def test_cancel_by_result_id(self):
+        """ Cancel removes a result. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        jobs = []
+        for i in xrange(5):
+          jobs.append(scientist.suggest())
+
+        for i in xrange(5):
+          result_id = scientist.get_id(jobs[i])
+          scientist.update_by_result_id(result_id, npr.randn())
+
+        for i in xrange(5):
+          result_id = scientist.get_id(jobs[i])
+          scientist.cancel_by_result_id(result_id)
+
+        # Make sure result was removed
+        scientist._sync_with_server()
+        assert_equals(len(scientist._ids_to_param_values), 0 )
+        assert_equals(len(scientist._ids_to_outcome_values), 0 )
         
+    def test_update_by_result_id(self):
+        """ Update adds and can overwrite a result. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        jobs = []
+        for i in xrange(5):
+          jobs.append(scientist.suggest())
+
+        outcomes = []
+        for i in xrange(5):          
+          result_id = scientist.get_id(jobs[i])
+          outcomes.append(npr.randn())
+          scientist.update_by_result_id(result_id, outcomes[-1])
+
+        # Make sure result was added
+        scientist._sync_with_server()
+        for i in xrange(5):
+          result_id = scientist.get_id(jobs[i])
+          assert_equals(scientist._ids_to_outcome_values[result_id], outcomes[i])
+
     def test_update(self):
         """ Update adds and can overwrite a result. """
 
