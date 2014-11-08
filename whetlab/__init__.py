@@ -611,7 +611,7 @@ class Experiment:
                 var['value'] = outcome_val
                 break # Assume only one outcome per experiment!
         self._client.update_result(result_id,result)
-        self._ids_to_outcome_values[result_id] = outcome_val     
+        self._ids_to_outcome_values[result_id] = outcome_val
 
     @catch_exception
     def get_id(self, param_values):
@@ -641,27 +641,28 @@ class Experiment:
         return id
 
     @catch_exception
-    def get_all_results(self, param_values):
+    def get_all_results(self):
         """
-        Return the result ID corresponding to the given ``param_values``.
-        If no result matches, return ``None``.
+        Return a list of all jobs and a list of their corresponding outcomes.
+        Pending outcomes are returned as ``None``.
 
         :param param_values: Values of parameters.
         :type param_values: dict       
-        :return: ID of the corresponding result. If not match, None is returned.
-        :rtype: int or None
+        :return: Tuple of lists containing parameter values and corresponding outcomes.
+        :rtype: tuple
         """
 
         # Sync with the REST server
         self._sync_with_server()
 
-        id = None
-
+        jobs     = []
+        outcomes = []
         for k,v in self._ids_to_param_values.iteritems():
-            if cmp(v,param_values) == 0:
-                id = k
+            jobs.append(Result(v))
+            jobs[-1]._result_id = k
+            outcomes.append(self._ids_to_outcome_values.get(k, None))
 
-        return id
+        return jobs, outcomes
 
     @catch_exception
     def update(self, param_values, outcome_val):
