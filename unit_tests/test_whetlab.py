@@ -457,6 +457,13 @@ class TestExperiment:
                                        parameters=default_parameters,
                                        outcome=default_outcome)
 
+        def count_in_list(j, jobs):
+          hits = 0
+          for job in jobs:
+            if scientist.get_id(job) == scientist.get_id(j):
+              hits += 1
+          return hits
+
         jobs = []
         for i in xrange(5):
           jobs.append(scientist.suggest())
@@ -464,6 +471,7 @@ class TestExperiment:
           assert_equals(len(j), len(o))
           assert_equals(len(j), i+1)
           assert_equals(o[i], None)
+          assert_equals(count_in_list(jobs[i], j), 1)
 
         for i in xrange(5):
           result_id = scientist.get_id(jobs[i])
@@ -471,15 +479,16 @@ class TestExperiment:
           scientist.update_by_result_id(result_id, outcome)
           j, o = scientist.get_all_results()
           assert_equals(len(j), len(o))
-          assert_equals(j[i], jobs[i])
-          assert_equals(o[i], outcome)
+          assert_equals(count_in_list(jobs[i], j), 1)
+          assert(outcome in o)
 
         for i in xrange(5):
           result_id = scientist.get_id(jobs[i])
           scientist.cancel_by_result_id(result_id)
           j, o = scientist.get_all_results()
           assert_equals(len(j), len(o))
-          assert_equals(len(j), 5-i)
+          assert_equals(count_in_list(jobs[i], j), 0)
+          assert_equals(len(j), 5-i-1)
 
     def test_update_by_result_id(self):
         """ Update adds and can overwrite a result. """

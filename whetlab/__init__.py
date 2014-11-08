@@ -576,44 +576,6 @@ class Experiment:
                 return None
 
     @catch_exception
-    def cancel_by_result_id(self, id):
-        """
-        Delete the experiment indexed by the given unique job/result ``id``.
-
-        :param id: Unique result identifier
-        :type id: int
-        """
-
-        self._client.delete_result(id)
-
-    @catch_exception
-    def update_by_result_id(self, result_id, outcome_val):
-        """
-        Update the experiment with the outcome value indexed by the given unique job/result ``id``.
-
-        :param result_id: Unique result identifier
-        :type id: int
-        :param outcome_val: Outcome value associated with this result
-        :type outcome_val: float
-        """
-
-        if outcome_val is not None:
-            outcome_val = float(outcome_val)
-
-        result_id = int(result_id)
-
-        result = self._client.get_result(result_id)
-        if result is None or 'variables' not in result:
-            raise ValueError("Job with result_id '" + str(result_id) + "' not found.")
-
-        for var in result['variables']:
-            if var['name'] == self.outcome_name:
-                var['value'] = outcome_val
-                break # Assume only one outcome per experiment!
-        self._client.update_result(result_id,result)
-        self._ids_to_outcome_values[result_id] = outcome_val
-
-    @catch_exception
     def get_id(self, param_values):
         """
         Return the result ID corresponding to the given ``param_values``.
@@ -658,11 +620,50 @@ class Experiment:
         jobs     = []
         outcomes = []
         for k,v in self._ids_to_param_values.iteritems():
-            jobs.append(Result(v))
-            jobs[-1]._result_id = k
-            outcomes.append(self._ids_to_outcome_values.get(k, None))
+            if v:
+                jobs.append(Result(v))
+                jobs[-1]._result_id = k
+                outcomes.append(self._ids_to_outcome_values.get(k, None))            
 
         return jobs, outcomes
+
+    @catch_exception
+    def cancel_by_result_id(self, id):
+        """
+        Delete the experiment indexed by the given unique job/result ``id``.
+
+        :param id: Unique result identifier
+        :type id: int
+        """
+
+        self._client.delete_result(id)
+
+    @catch_exception
+    def update_by_result_id(self, result_id, outcome_val):
+        """
+        Update the experiment with the outcome value indexed by the given unique job/result ``id``.
+
+        :param result_id: Unique result identifier
+        :type id: int
+        :param outcome_val: Outcome value associated with this result
+        :type outcome_val: float
+        """
+
+        if outcome_val is not None:
+            outcome_val = float(outcome_val)
+
+        result_id = int(result_id)
+
+        result = self._client.get_result(result_id)
+        if result is None or 'variables' not in result:
+            raise ValueError("Job with result_id '" + str(result_id) + "' not found.")
+
+        for var in result['variables']:
+            if var['name'] == self.outcome_name:
+                var['value'] = outcome_val
+                break # Assume only one outcome per experiment!
+        self._client.update_result(result_id,result)
+        self._ids_to_outcome_values[result_id] = outcome_val
 
     @catch_exception
     def update(self, param_values, outcome_val):
