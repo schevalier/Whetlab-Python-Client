@@ -551,6 +551,8 @@ class Experiment:
         self._ids_to_param_values[result_id] = next
         next = Result(next)
         next._result_id = result_id
+        next._experiment_id = self.experiment_id
+
         return next
 
     @catch_exception
@@ -564,16 +566,73 @@ class Experiment:
         :return: ID of the corresponding result. If not match, None is returned.
         :rtype: dict or None
         """
-
-        if id in self._ids_to_param_values:
-            return Result(self._ids_to_param_values[id])
+        result = None
+        if id in self._ids_to_param_values:            
+            result = Result(self._ids_to_param_values[id])
 
         else:
             self._sync_with_server()
             if id in self._ids_to_param_values:
-                return Result(self._ids_to_param_values[id])
-            else:
-                return None
+                result = Result(self._ids_to_param_values[id])
+
+        if result is not None:
+            result._result_id = id
+            result._experiment_id = self.experiment_id
+
+        return result
+
+    @catch_exception
+    def get_id(self, param_values):
+        """
+        Return the result ID corresponding to the given ``param_values``.
+        If no result matches, return ``None``.
+
+        :param param_values: Values of parameters.
+        :type param_values: dict       
+        :return: ID of the corresponding result. If not match, None is returned.
+        :rtype: int or None
+        """
+
+        if type(param_values) == 'whetlab.Result' and param_values._result_id is not None:
+            if param_values._experiment_id == self.experiment_id:
+                return param_values._result_id
+            else: # Result belongs to another experiment
+                param_values = dict(param_values)
+
+        # Sync with the REST server
+        self._sync_with_server()
+
+        id = None
+
+        for k,v in self._ids_to_param_values.iteritems():
+            if cmp(v,param_values) == 0:
+                id = k
+
+        return id
+
+    @catch_exception
+    def get_all_results(self):
+        """
+        Return a list of all jobs and a list of their corresponding outcomes.
+        Pending outcomes are returned as having ``None`` outcomes.
+
+        :return: Tuple of lists containing parameter values and corresponding outcomes indexed by unique result id.
+        :rtype: tuple of lists
+        """
+
+        # Sync with the REST server
+        self._sync_with_server()
+
+        jobs     = []
+        outcomes = []
+        for k,v in self._ids_to_param_values.iteritems():
+            if v:
+                jobs.append(Result(v))
+                jobs[-1]._result_id = k
+                jobs[-1]._experiment_id = self.experiment_id
+                outcomes.append(self._ids_to_outcome_values.get(k, None))            
+
+        return jobs, outcomes
 
     @catch_exception
     def cancel_by_result_id(self, id):
@@ -611,57 +670,7 @@ class Experiment:
                 var['value'] = outcome_val
                 break # Assume only one outcome per experiment!
         self._client.update_result(result_id,result)
-        self._ids_to_outcome_values[result_id] = outcome_val     
-
-    @catch_exception
-    def get_id(self, param_values):
-        """
-        Return the result ID corresponding to the given ``param_values``.
-        If no result matches, return ``None``.
-
-        :param param_values: Values of parameters.
-        :type param_values: dict       
-        :return: ID of the corresponding result. If not match, None is returned.
-        :rtype: int or None
-        """
-
-        param_values = Result(param_values)
-        if param_values._result_id is not None:
-            return param_values._result_id
-
-        # Sync with the REST server
-        self._sync_with_server()
-
-        id = None
-
-        for k,v in self._ids_to_param_values.iteritems():
-            if cmp(v,param_values) == 0:
-                id = k
-
-        return id
-
-    @catch_exception
-    def get_all_results(self, param_values):
-        """
-        Return the result ID corresponding to the given ``param_values``.
-        If no result matches, return ``None``.
-
-        :param param_values: Values of parameters.
-        :type param_values: dict       
-        :return: ID of the corresponding result. If not match, None is returned.
-        :rtype: int or None
-        """
-
-        # Sync with the REST server
-        self._sync_with_server()
-
-        id = None
-
-        for k,v in self._ids_to_param_values.iteritems():
-            if cmp(v,param_values) == 0:
-                id = k
-
-        return id
+        self._ids_to_outcome_values[result_id] = outcome_val
 
     @catch_exception
     def update(self, param_values, outcome_val):
@@ -708,7 +717,9 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' not specified")
 
         # Check whether this param_values has a results ID
-        if type(param_values) == Result and param_values._result_id is not None:
+        if (type(param_values) == Result and 
+                param_values._result_id is not None and
+                param_values._experiment_id == self.experiment_id):        
             result_id = param_values._result_id
         else:
             result_id = self.get_id(param_values)
@@ -788,7 +799,10 @@ class Experiment:
         ret = [] 
         for key,val in self._ids_to_outcome_values.iteritems():
             if val is None:
-                ret.append(self._ids_to_param_values[key])
+                ret.append(Result(self._ids_to_param_values[key]))
+                ret[-1].result_id = key
+                ret[-1].experiment_id = self.experiment_id
+
         return list(ret)
 
     @catch_exception
@@ -822,7 +836,11 @@ class Experiment:
         outcomes[np.logical_not(np.isfinite(outcomes))] = -np.inf
         result_id = ids[outcomes.argmax()]
 
-        return self._ids_to_param_values[result_id]
+        result = Result(self._ids_to_param_values[result_id])
+        result._result_id     = result_id
+        result._experiment_id = self.experiment_id
+
+        return result
     
     @catch_exception
     def report(self):
@@ -905,8 +923,9 @@ class Result(dict):
     Simple class for results, which contain a result ID as metadata.
     """
 
-    _result_id = None
-    
+    _experiment_id = None
+    _result_id     = None    
+
 
 RETRY_TIMES = [5,30,60,150,300]
 
