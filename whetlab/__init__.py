@@ -930,7 +930,7 @@ def retry(f):
                     time.sleep(retry_time)
                 elif e.code == 429:
                     if i == len(RETRY_TIMES):
-                        raise e
+                        i -= 1
                     msg = e.message[0] if type(e.message) == list else e.message
                     print 'WARNING: rate limited by the server: %s Will try again in %d seconds.' % (msg, RETRY_TIMES[i])
                     time.sleep(RETRY_TIMES[i])

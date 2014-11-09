@@ -7,7 +7,7 @@ parameters = { 'X' : {'type':'integer','min':0,'max':15,'size':1},
 name = 'Integer Example'
 access_token = None # Either replace this with your access token or put it in your ~/.whetlab file.
 description = 'Optimize a simple quadratic with integer variables.'
-outcome = {'name':'Function value', 'type':'float'}
+outcome = {'name':'Function value'}
 scientist = whetlab.Experiment(name=name, access_token=access_token, description=description,
                                parameters=parameters, outcome=outcome)
 
