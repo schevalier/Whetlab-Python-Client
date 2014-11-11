@@ -86,8 +86,14 @@ class HttpClient():
 		del kwargs['user_agent']
 
 		if body is not None:
-			body['sys_info'] = list(platform.uname()),
-			body['load_info'] = os.getloadavg()
+			try:
+				body['sys_info'] = list(platform.uname())
+			except:
+				pass
+			try:
+				body['load_info'] = os.getloadavg()
+			except:
+				pass
 
 		if method != 'get':
 			kwargs = self.set_body(kwargs)
