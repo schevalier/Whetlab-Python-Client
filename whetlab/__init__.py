@@ -152,8 +152,12 @@ def _validate_integer(name, properties):
         if property not in properties:
             properties[property] = default
 
+    # Finite bounds
+    if not np.isfinite(properties['min']) or not np.isfinite(properties['max']):
+        raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite.")
+
     # Check compatibility of properties
-    if properties['min'] >= properties['max']:
+    if not (properties['min'] < properties['max']):
         raise ValueError("Parameter '" + name + "': 'min' should be smaller than 'max'")
 
     if np.mod(properties['min'],1) != 0 : raise ValueError("Parameter '" + name + "': 'min' should be an integer")
@@ -183,6 +187,10 @@ def _validate_float(name, properties):
     for property, default in default_values['float'].iteritems():
         if property not in properties:
             properties[property] = default
+
+    # Finite bounds
+    if not np.isfinite(properties['min']) or not np.isfinite(properties['max']):
+        raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite.")
 
     # Check compatibility of properties
     if properties['min'] >= properties['max']:
@@ -693,7 +701,9 @@ class Experiment:
                 raise ValueError("Parameter '" +param+ "' should be of size "+str(self.parameters[param]['size']))
             
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
-                if np.any(np.array(value) < self.parameters[param]['min']) or np.any(np.array(value) > self.parameters[param]['max']):
+                if ((not np.all(np.isfinite(value))) or
+                     np.any(np.array(value) < self.parameters[param]['min']) or
+                     np.any(np.array(value) > self.parameters[param]['max'])):
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
             if self.parameters[param]['type'] == 'enum':

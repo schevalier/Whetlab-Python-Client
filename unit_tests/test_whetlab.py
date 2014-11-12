@@ -232,6 +232,39 @@ class TestExperiment:
                                        outcome=default_outcome)
 
     @raises(ValueError)
+    def test_nan_bounds(self):
+        """ Parameter properties 'min' and 'max' must be finite. """
+
+        bad_parameters = { 'p1':{'type':'float', 'min':np.nan, 'max':0.5, 'size':1}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    @raises(ValueError)
+    def test_infinite_bounds(self):
+        """ Parameter properties 'min' and 'max' must be finite. """
+
+        bad_parameters = { 'p1':{'type':'float', 'min':-np.inf, 'max':np.inf, 'size':1}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    @raises(ValueError)
+    def test_vector_bounds(self):
+        """ Parameter properties 'min' and 'max' must be finite numbers. """
+
+        bad_parameters = { 'p1':{'type':'float', 'min':[0.1, 0.2], 'max':0.5, 'size':1}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    @raises(ValueError)
     def test_legal_property_value(self):
         """ Parameter property must take a legal value. """
 
