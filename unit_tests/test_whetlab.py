@@ -254,6 +254,28 @@ class TestExperiment:
                                        outcome=default_outcome)
 
     @raises(ValueError)
+    def test_large_neg_bounds(self):
+        """ Parameter properties 'min' and 'max' must be greater than -1e32. """
+
+        bad_parameters = { 'p1':{'type':'integer', 'min':-1e35, 'max':1.0, 'size':1}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    @raises(ValueError)
+    def test_large_bounds(self):
+        """ Parameter properties 'min' and 'max' must be less than 1e32. """
+
+        bad_parameters = { 'p1':{'type':'integer', 'min':1.0, 'max':1e33, 'size':1}}
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=bad_parameters,
+                                       outcome=default_outcome)
+
+    @raises(ValueError)
     def test_vector_bounds(self):
         """ Parameter properties 'min' and 'max' must be finite numbers. """
 

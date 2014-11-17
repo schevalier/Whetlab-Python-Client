@@ -154,7 +154,10 @@ def _validate_integer(name, properties):
 
     # Finite bounds
     if not np.isfinite(properties['min']) or not np.isfinite(properties['max']):
-        raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite.")
+        raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite.")    
+    if (properties['min'] < -1e32 or properties['max'] < -1e32 or properties['min'] < -1e32 or 
+        properties['min'] > 1e32  or properties['max'] > 1e32):
+        raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite and between -1e32 and 1e32.")
 
     # Check compatibility of properties
     if not (properties['min'] < properties['max']):
@@ -191,6 +194,9 @@ def _validate_float(name, properties):
     # Finite bounds
     if not np.isfinite(properties['min']) or not np.isfinite(properties['max']):
         raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite.")
+    if (properties['min'] < -1e32 or properties['max'] < -1e32 or properties['min'] < -1e32 or 
+        properties['min'] > 1e32  or properties['max'] > 1e32):
+        raise ValueError("Parameter '" + name + "': 'min' and 'max' must be finite and between -1e32 and 1e32.")
 
     # Check compatibility of properties
     if properties['min'] >= properties['max']:
